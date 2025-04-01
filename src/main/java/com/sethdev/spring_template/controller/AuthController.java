@@ -60,16 +60,17 @@ public class AuthController {
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
 
-        List<String> roles = userDetails.getAuthorities().stream()
+        /*List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .body(new UserInfoResponse(userDetails.getId(),
                         userDetails.getUsername(),
                         userDetails.getFullName(),
                         userDetails.getEmail(),
-                        roles, jwtCookie.toString().split(";")[0]));
+                        null,//roles,
+                        jwtCookie.toString().split(";")[0]));
     }
 
     @PostMapping("/signup")
@@ -92,7 +93,7 @@ public class AuthController {
                 signUpRequest.getEmail());
 
         //Set<String> strRoles = signUpRequest.getRole();
-        String strRole = signUpRequest.getRole();
+        /*String strRole = signUpRequest.getRole();
         Set<Role> roles = new HashSet<>();
 
         if (StringUtils.isBlank(strRole)) {
@@ -117,9 +118,9 @@ public class AuthController {
                     roles.add(userRole);
                     break;
             }
-        }
+        }*/
         //user.setRoles(roles);
-        user.setRole(roles.iterator().next().getName());
+        //user.setRole(roles.iterator().next().getName());
         userRepository.save(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));

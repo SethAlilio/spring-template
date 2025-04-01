@@ -8,10 +8,98 @@
     <resultMap id="Role" type="com.sethdev.spring_template.models.Role">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="enabled" property="enabled"/>
+        <result column="create_date" property="createDate"
+                typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler" />
+        <result column="create_by" property="createBy"/>
     </resultMap>
+
+    <resultMap id="SysResource" type="com.sethdev.spring_template.models.sys.SysResource">
+        <id column="id" property="id"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="type" property="type"/>
+        <result column="name" property="name"/>
+        <result column="enabled" property="enabled"/>
+        <result column="icon" property="icon"/>
+        <result column="path" property="path"/>
+        <result column="sort" property="sort"/>
+        <result column="create_date" property="createDate"
+                typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="create_by" property="createBy"/>
+    </resultMap>
+
+    <resultMap id="SysPermission" type="com.sethdev.spring_template.models.sys.SysPermission">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="role_id" property="roleId"/>
+        <result column="resource_id" property="resourceId"/>
+        <result column="type" property="type"/>
+        <result column="create_date" property="createDate"
+                typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="create_by" property="createBy"/>
+    </resultMap>
+
+    <sql id="whereRoleList">
+        <where>
+            <if test="query != null and query.name != null and query.name != ''">
+                <bind name="likeName" value="'%' + query.name + '%'"/>
+                LOWER(name) LIKE LOWER(#{likeName})
+            </if>
+            <if test="query != null and query.description != null and query.description != ''">
+                <bind name="likeDescription" value="'%' + query.description + '%'"/>
+                AND LOWER(description) LIKE LOWER(#{likeDescription})
+            </if>
+        </where>
+    </sql>
 
     <select id="findByName" parameterType="com.sethdev.spring_template.models.ERole" resultMap="Role">
         SELECT * FROM role WHERE name = #{name} LIMIT 1
+    </select>
+
+    <insert id="createRole" parameterType="com.sethdev.spring_template.models.Role"
+        useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        INSERT INTO role (name, description, create_by)
+        VALUES (#{name}, #{description}, #{createBy})
+    </insert>
+
+    <select id="getRole" parameterType="Integer" resultMap="Role">
+        SELECT * FROM role WHERE id = #{id}
+    </select>
+
+    <select id="getRoleList" parameterType="com.sethdev.spring_template.models.PagingRequest" resultMap="Role">
+        SELECT * FROM role
+        <include refid="whereRoleList"/>
+        ORDER BY id DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="getRoleListTotalCount" parameterType="com.sethdev.spring_template.models.PagingRequest" resultType="Integer">
+        SELECT COUNT(0) FROM role
+        <include refid="whereRoleList"/>
+    </select>
+
+    <update id="updateRole" parameterType="com.sethdev.spring_template.models.Role">
+        UPDATE role
+        SET
+            name = #{name},
+            description = #{description},
+            enabled = #{enabled}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteRole" parameterType="Integer">
+        DELETE FROM role WHERE id = #{id}
+    </delete>
+
+    <!-- MISC -->
+
+    <!--<select id="getAllResources" resultMap="SysResource">
+        SELECT * FROM sys_resource
+    </select>-->
+
+    <select id="getRolePermissions" parameterType="Integer" resultMap="SysPermission">
+        SELECT resource_id FROM sys_permission WHERE role_id = #{id}
     </select>
 
 </mapper>
