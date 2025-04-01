@@ -18,10 +18,11 @@ const CustomAppMenu = () => {
         {
             label: 'Modules',
             items: [
-                { label: 'Participant', icon: 'pi pi-fw pi-users', to: '/pages/participant' },
-                { label: 'Prize', icon: 'pi pi-fw pi-gift', to: '/pages/prize' },
-                { label: 'Raffle Event', icon: 'pi pi-fw pi-star', to: '/pages/raffleevent' },
-                { label: 'Batch Raffle', icon: 'pi pi-fw pi-star', to: '/pages/batchraffle' }
+                { label: 'Database Connection', icon: 'pi pi-fw pi-database', to: '/pages/databaseconn' },
+                { label: 'Database Backup', icon: 'pi pi-fw pi-cloud-download', to: '/pages/databasebackup' },
+                { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
+                { label: 'Panel', icon: 'pi pi-fw pi-check-square', to: '/uikit/panel' },
+                { label: 'Menu', icon: 'pi pi-fw pi-check-square', to: '/uikit/menu' },
             ]
         }
     ];

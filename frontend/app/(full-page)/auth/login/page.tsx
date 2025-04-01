@@ -28,7 +28,9 @@ const LoginPage = () => {
     const router = useRouter();
     const { login, user } = useAuthStore();
     const containerClassName = classNames('surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden', { 'p-input-filled': layoutConfig.inputStyle === 'filled' });
-
+    const containerStyle = {
+        background: 'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(34,135,195,1) 100%)'
+    };
     
     useEffect(() => {
         console.log('LoginPage | useEffect')
@@ -55,7 +57,7 @@ const LoginPage = () => {
     }
 
     return (!loadingPage ? 
-        <div className={containerClassName}>
+        <div className={containerClassName} style={containerStyle}>
             <Toast ref={toast} />
             <div className="flex flex-column align-items-center justify-content-center">
                 {/* <img src={`/layout/images/logo-${layoutConfig.colorScheme === 'light' ? 'dark' : 'white'}.svg`} alt="Sakai logo" className="mb-5 w-6rem flex-shrink-0" /> */}
@@ -63,14 +65,13 @@ const LoginPage = () => {
                     style={{
                         borderRadius: '56px',
                         padding: '0.3rem',
-                        background: 'linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)'
-                    }}
-                >
+                        color: 'white'
+                    }}>
                     <div className="w-full surface-card py-8 px-5 sm:px-8" style={{ borderRadius: '53px' }}>
                         <div className="text-center mb-5">
                             {/* <img src="/demo/images/login/avatar.png" alt="Image" height="50" className="mb-3" /> */}
-                            <div className="text-900 text-3xl font-medium mb-3">Raffle System Admin Login</div>
-                            <span className="text-600 font-medium">Sign in to continue</span>
+                            <div className="text-900 text-3xl font-medium mb-3">BPM Login</div>
+                            {/* <span className="text-600 font-medium">Sign in to continue</span> */}
                         </div>
 
                         <div>
@@ -82,8 +83,8 @@ const LoginPage = () => {
                             <label htmlFor="password1" className="block text-900 font-medium text-xl mb-2">
                                 Password
                             </label>
-                            <Password inputId="password1" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" toggleMask 
-                                className="w-full mb-5" inputClassName="w-full p-3 md:w-30rem"  feedback={false}></Password>
+                            <Password inputId="password1" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"  
+                                className="w-full mb-5" inputClassName="w-full p-3 md:w-30rem"  feedback={false}/>
 
                             <div className="flex align-items-center justify-content-between mb-5 gap-5">
                                 {/* <div className="flex align-items-center">
@@ -94,8 +95,8 @@ const LoginPage = () => {
                                     Forgot password?
                                 </a> */}
                             </div>
-                            <Button label="Sign In" className="w-full p-3 text-xl" onClick={() => signIn()} loading={loadingSignIn}></Button>
-                            <Button label="Register" className="w-full p-3 text-xl" text onClick={() => router.push('/auth/register')}></Button>
+                            <Button label="Sign In" className="w-full p-3 text-xl" outlined onClick={() => signIn()} loading={loadingSignIn} style={{color:'white'}}></Button>
+                            <Button label="Register" className="w-full p-3 text-xl" text onClick={() => router.push('/auth/register')} style={{color:'white'}}></Button>
                         </div>
                     </div>
                 </div>

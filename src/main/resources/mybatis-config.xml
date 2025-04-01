@@ -4,10 +4,11 @@
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
     <typeAliases>
-        <package name="com.sethdev.spring_template.repository"/>
+        <package name="com.sethdev.cbpm.repository"/>
     </typeAliases>
     <mappers>
         <mapper resource="mappers/role.map.xml"/>
         <mapper resource="mappers/user.map.xml"/>
+        <mapper resource="mappers/database.map.xml"/>
     </mappers>
 </configuration>
