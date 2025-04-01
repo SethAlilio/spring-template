@@ -3,9 +3,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.sethdev.cbpm.repository.UserRepository">
+<mapper namespace="com.sethdev.spring_template.repository.UserRepository">
 
-    <resultMap id="User" type="com.sethdev.cbpm.models.User">
+    <resultMap id="User" type="com.sethdev.spring_template.models.User">
         <id column="id" property="id"/>
         <result column="username" property="username"/>
         <result column="password" property="password"/>
@@ -16,7 +16,7 @@
         <result column="role" property="role"/>
     </resultMap>
 
-    <insert id="save" parameterType="com.sethdev.cbpm.models.User">
+    <insert id="save" parameterType="com.sethdev.spring_template.models.User">
         INSERT INTO user (username, password, full_name, email, role)
         VALUES (#{username}, #{password}, #{fullName}, #{email}, #{role})
     </insert>
@@ -45,7 +45,7 @@
         SELECT id FROM user WHERE email = #{email}
     </select>
 
-    <update id="updateDetails" parameterType="com.sethdev.cbpm.models.User">
+    <update id="updateDetails" parameterType="com.sethdev.spring_template.models.User">
         UPDATE user
         SET username = #{username},
         full_name = #{fullName},
@@ -53,7 +53,7 @@
         WHERE id = #{id}
     </update>
 
-    <update id="updatePassword" parameterType="com.sethdev.cbpm.models.User">
+    <update id="updatePassword" parameterType="com.sethdev.spring_template.models.User">
         UPDATE user SET password = #{password} WHERE id = #{id}
     </update>
 

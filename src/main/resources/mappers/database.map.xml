@@ -3,9 +3,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.sethdev.cbpm.repository.DatabaseConnectionRepository">
+<mapper namespace="com.sethdev.spring_template.repository.DatabaseConnectionRepository">
 
-    <resultMap id="DatabaseConnection" type="com.sethdev.cbpm.models.DatabaseConnection">
+    <resultMap id="DatabaseConnection" type="com.sethdev.spring_template.models.DatabaseConnection">
         <id column="id" property="id"/>
         <result column="type" property="type"/>
         <result column="name" property="name"/>
@@ -34,7 +34,7 @@
         </where>
     </sql>
 
-    <insert id="insert" parameterType="com.sethdev.cbpm.models.DatabaseConnection">
+    <insert id="insert" parameterType="com.sethdev.spring_template.models.DatabaseConnection">
         INSERT INTO database_connection
             (type,
             name,
@@ -59,14 +59,14 @@
         SELECT * FROM database_connection WHERE id = #{id}
     </select>
 
-    <select id="list" parameterType="com.sethdev.cbpm.payload.request.PagingRequest" resultMap="DatabaseConnection">
+    <select id="list" parameterType="com.sethdev.spring_template.payload.request.PagingRequest" resultMap="DatabaseConnection">
         SELECT id, name, type FROM database_connection
         <include refid="whereList"/>
         ORDER BY id DESC
         LIMIT #{start}, #{limit}
     </select>
 
-    <select id="listCount" parameterType="com.sethdev.cbpm.payload.request.PagingRequest" resultType="Integer">
+    <select id="listCount" parameterType="com.sethdev.spring_template.payload.request.PagingRequest" resultType="Integer">
         SELECT COUNT(0) FROM database_connection
         <include refid="whereList"/>
     </select>
@@ -75,7 +75,7 @@
         SELECT id, name, type FROM database_connection ORDER BY id DESC
     </select>
 
-    <update id="update" parameterType="com.sethdev.cbpm.models.DatabaseConnection">
+    <update id="update" parameterType="com.sethdev.spring_template.models.DatabaseConnection">
         UPDATE database_connection
         SET
             type = #{type},
