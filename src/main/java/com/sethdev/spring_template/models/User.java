@@ -20,7 +20,8 @@ public class User {
     private String email;
     private String password;
     //private Set<Role> roles = new HashSet<>();
-    private String role ;
+    private String relationId;
+    private String role;
     private LocalDateTime createDate;
 
     public User(String username, String password, String fullName, String email) {

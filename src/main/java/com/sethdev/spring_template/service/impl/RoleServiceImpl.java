@@ -65,7 +65,7 @@ public class RoleServiceImpl implements RoleService {
         log.info("getRole | resources: " + GsonUtil.toJson(resources));
         List<SysPermission> permissions = roleRepo.getRolePermissions(id);
 
-        List<ResourceNode<Integer>> resourceNodes = sysResourceService.convertSysResourceListToListPermissionNode(
+        List<ResourceNode<Integer>> resourceNodes = sysResourceService.convertSysResourceListToListResourceNode(
           resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
         );
         role.setPermissionTree(resourceNodes);
@@ -94,6 +94,7 @@ public class RoleServiceImpl implements RoleService {
         }
     }*/
 
+    //Format the resources for the `value` property of PrimeReact's Tree component
     public Map<String, ResourceNodeCheck> convertSysPermissionListToPermissionNodeCheckMap(
             List<SysPermission> permissions, List<SysResource> resources) {
         List<Integer> permittedResourceIds = permissions.stream()
@@ -105,12 +106,11 @@ public class RoleServiceImpl implements RoleService {
         return selectedPermissions;
     }
 
+    //Format the permission for the `selectedKey` property of PrimeReact's Tree component
     public ResourceNodeCheck getAsPermissionNodeCheck(Integer resourceId, List<Integer> permissions,
                                                       List<SysResource> resources) {
         SysResource resource = resources.stream().filter(x -> x.getId().equals(resourceId))
                 .findFirst().orElse(null);
-        //if (resource == null) return new PermissionNodeCheck(false, false);
-
         if (resource != null && permissions.contains(resourceId)) {
             List<Integer> children = resources.stream()
                     .filter(x -> x.getParentId() != null && x.getParentId().equals(resourceId))
@@ -148,11 +148,13 @@ public class RoleServiceImpl implements RoleService {
             throw new BusinessException("Name is required");
         }
         roleRepo.updateRole(role);
+
+        //Adjust sys permission
         if (MapUtils.isEmpty(role.getSelectedPermissions())) {
-            //TODO: Delete all sys_permission
+            //Delete all permission
             sysResourceService.deletePermissionsByRoleId(role.getId());
         } else {
-            //TODO: Get current sys_permission
+            //Get permissions to delete or to add based on the current perms
             List<SysPermission> currentPerms = sysResourceService.getSysPermissionsByRoleId(role.getId());
             List<Integer> currentPermsIds = currentPerms.stream()
                     .map(SysPermission::getId)
@@ -161,7 +163,6 @@ public class RoleServiceImpl implements RoleService {
                     .map(Integer::valueOf)
                     .collect(Collectors.toList());
 
-            //TODO: Get to add
             List<SysPermission> toAdd = newPermsIds.stream()
                     .filter(x -> !currentPermsIds.contains(x))
                     .map(x -> {
@@ -175,7 +176,6 @@ public class RoleServiceImpl implements RoleService {
                     })
                     .collect(Collectors.toList());
 
-            //TODO: Get to delete
             List<Integer> toDelete = currentPermsIds.stream()
                     .filter(x -> !newPermsIds.contains(x))
                     .collect(Collectors.toList());

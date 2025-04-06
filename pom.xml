@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sethdev</groupId>
-	<artifactId>cbpm</artifactId>
+	<artifactId>spring-template</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>cbpm</name>
+	<name>spring-template</name>
 	<description>Spring Template</description>
 	<properties>
 		<java.version>11</java.version>

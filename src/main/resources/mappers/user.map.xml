@@ -11,6 +11,7 @@
         <result column="password" property="password"/>
         <result column="full_name" property="fullName"/>
         <result column="email" property="email"/>
+        <result column="relation_id" property="relationId"/>
         <result column="create_date" property="createDate"
                 typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
         <result column="role" property="role"/>
@@ -43,6 +44,42 @@
 
     <select id="getIdByEmail" parameterType="String" resultType="Integer">
         SELECT id FROM user WHERE email = #{email}
+    </select>
+
+    <select id="getUsersByGroupId" resultMap="User" parameterType="Integer">
+        SELECT u.id, u.username, u.full_name, u.email, u.relation_id, r.name `role`
+        FROM user u
+        INNER JOIN sys_relation sr ON sr.user_id = u.id
+        INNER JOIN role r ON r.id = sr.role_id
+        <where>
+            sr.group_id = #{groupId}
+            <if test="query.fullName != null and query.fullName != ''">
+                <bind name="likeFullName" value="'%' + query.fullName + '%'"/>
+                AND LOWER(u.full_name) LIKE LOWER(#{likeFullName})
+            </if>
+            <if test="query.roleId != null and query.roleId != ''">
+                AND sr.role_id = #{query.roleId}
+            </if>
+        </where>
+        ORDER BY u.relation_id DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="getUsersByGroupIdCount" resultType="Integer" parameterType="Integer">
+        SELECT COUNT(0)
+        FROM user u
+        INNER JOIN sys_relation sr ON sr.user_id = u.id
+        INNER JOIN role r ON r.id = sr.role_id
+        <where>
+            sr.group_id = #{groupId}
+            <if test="query.fullName != null and query.fullName != ''">
+                <bind name="likeFullName" value="'%' + query.fullName + '%'"/>
+                AND LOWER(u.full_name) LIKE LOWER(#{likeFullName})
+            </if>
+            <if test="query.roleId != null and query.roleId != ''">
+                AND sr.role_id = #{query.roleId}
+            </if>
+        </where>
     </select>
 
     <update id="updateDetails" parameterType="com.sethdev.spring_template.models.User">

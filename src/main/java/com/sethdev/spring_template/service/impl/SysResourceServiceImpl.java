@@ -27,13 +27,13 @@ public class SysResourceServiceImpl implements SysResourceService {
     @Override
     public List<ResourceNode<Integer>> getAllResourcesAsPermissionNodeList() {
         List<SysResource> resources = sysResourceRepo.getAllResources();
-        return convertSysResourceListToListPermissionNode(
+        return convertSysResourceListToListResourceNode(
                 resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
         );
     }
 
     @Override
-    public List<ResourceNode<Integer>> convertSysResourceListToListPermissionNode(List<SysResource> currentIteration,
+    public List<ResourceNode<Integer>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
                                                                                   List<SysResource> resources) {
         if (CollectionUtils.isNotEmpty(currentIteration)) {
             return currentIteration.stream()
@@ -42,7 +42,7 @@ public class SysResourceServiceImpl implements SysResourceService {
                             .label(res.getName())
                             .icon("pi pi-fw " + res.getIcon())
                             .data(res.getId())
-                            .children(convertSysResourceListToListPermissionNode(
+                            .children(convertSysResourceListToListResourceNode(
                                     resources.stream()
                                             .filter(x -> x.getParentId() != null && x.getParentId().equals(res.getId()))
                                             .collect(Collectors.toList()), resources))

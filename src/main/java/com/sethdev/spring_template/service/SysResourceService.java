@@ -11,7 +11,7 @@ public interface SysResourceService {
 
     List<ResourceNode<Integer>> getAllResourcesAsPermissionNodeList();
 
-    List<ResourceNode<Integer>> convertSysResourceListToListPermissionNode(List<SysResource> currentIteration,
+    List<ResourceNode<Integer>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
                                                                            List<SysResource> resources);
 
     void insertSysPermissions(List<SysPermission> permissions);

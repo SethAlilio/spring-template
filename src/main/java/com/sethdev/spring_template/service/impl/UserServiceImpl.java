@@ -1,6 +1,8 @@
 package com.sethdev.spring_template.service.impl;
 
+import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
+import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.User;
 import com.sethdev.spring_template.repository.UserRepository;
 import com.sethdev.spring_template.service.UserService;
@@ -10,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -56,5 +59,17 @@ public class UserServiceImpl implements UserService {
         return new ResultMsg<>().success("Password updated");
     }
 
+    @Override
+    public ResultPage<User> getUsersFromGroup(PagingRequest<Map<String, Object>> request) {
+        List<User> userList = userRepository.getUsersFromGroup(request);
+        int totalCount = request.getStart() == 0 && userList.size() < request.getLimit()
+                ? userList.size() : userRepository.getUsersByGroupIdCount(request);
+        return ResultPage.<User>builder()
+                .data(userList)
+                .pageStart(request.getStart())
+                .pageSize(request.getLimit())
+                .totalCount(totalCount)
+                .build();
+    }
 
 }

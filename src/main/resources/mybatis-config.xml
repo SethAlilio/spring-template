@@ -9,6 +9,7 @@
     <mappers>
         <mapper resource="mappers/role.map.xml"/>
         <mapper resource="mappers/user.map.xml"/>
+        <mapper resource="mappers/group.map.xml"/>
         <mapper resource="mappers/database.map.xml"/>
         <mapper resource="mappers/sys_resource.map.xml"/>
     </mappers>
