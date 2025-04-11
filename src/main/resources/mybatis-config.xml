@@ -11,6 +11,8 @@
         <mapper resource="mappers/user.map.xml"/>
         <mapper resource="mappers/group.map.xml"/>
         <mapper resource="mappers/database.map.xml"/>
+        <mapper resource="mappers/sys_custom_dialog.map.xml"/>
+        <mapper resource="mappers/sys_relation.map.xml"/>
         <mapper resource="mappers/sys_resource.map.xml"/>
     </mappers>
 </configuration>

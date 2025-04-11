@@ -4,7 +4,7 @@ import com.google.gson.GsonBuilder;
 
 import java.time.LocalDateTime;
 
-public class GsonUtil {
+public class GsonUtils {
     public static String toJson(Object object) {
         return new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())

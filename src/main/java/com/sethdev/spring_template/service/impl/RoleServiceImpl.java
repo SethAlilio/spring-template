@@ -8,7 +8,7 @@ import com.sethdev.spring_template.repository.RoleRepository;
 import com.sethdev.spring_template.service.ContextService;
 import com.sethdev.spring_template.service.RoleService;
 import com.sethdev.spring_template.service.SysResourceService;
-import com.sethdev.spring_template.util.GsonUtil;
+import com.sethdev.spring_template.util.GsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -62,7 +62,7 @@ public class RoleServiceImpl implements RoleService {
             throw new BusinessException("Role not found");
         }
         List<SysResource> resources = sysResourceService.getAllResources();
-        log.info("getRole | resources: " + GsonUtil.toJson(resources));
+        log.info("getRole | resources: " + GsonUtils.toJson(resources));
         List<SysPermission> permissions = roleRepo.getRolePermissions(id);
 
         List<ResourceNode<Integer>> resourceNodes = sysResourceService.convertSysResourceListToListResourceNode(

@@ -17,7 +17,7 @@ public class SysResource extends BaseModel {
 
     private String name;
 
-    private Integer enabled;
+    private Boolean enabled;
 
     private String icon;
 

@@ -17,10 +17,10 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @PostMapping("/update")
+    /*@PostMapping("/update")
     public ResultMsg<?> updateUserDetails(@RequestBody User user) {
         return userService.updateUserDetails(user);
-    }
+    }*/
 
     @PostMapping("/changePassword")
     public ResultMsg<?> updatePassword(@RequestBody User user) {
@@ -32,4 +32,28 @@ public class UserController {
         return userService.getUsersFromGroup(request);
     }
 
+    @PostMapping("/create")
+    public ResultMsg<?> createUser(@RequestBody User user) {
+        return userService.createUser(user);
+    }
+
+    @PostMapping("/list")
+    public ResultPage<User> getUserList(@RequestBody PagingRequest<User> request) {
+        return userService.getUserList(request);
+    }
+
+    @PostMapping("/get")
+    public ResultMsg<User> getUser(@RequestParam Integer id) {
+        return userService.getUser(id);
+    }
+
+    @PostMapping("/update")
+    public ResultMsg<?> updateUser(@RequestBody User user) {
+        return userService.updateUser(user);
+    }
+
+    @PostMapping("/delete")
+    public ResultMsg<?> deleteUser(@RequestParam Integer id) {
+        return userService.deleteUser(id);
+    }
 }

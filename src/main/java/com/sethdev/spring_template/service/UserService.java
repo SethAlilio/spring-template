@@ -13,4 +13,14 @@ public interface UserService {
     ResultMsg<?> updatePassword(User user);
 
     ResultPage<User> getUsersFromGroup(PagingRequest<Map<String, Object>> request);
+
+    ResultPage<User> getUserList(PagingRequest<User> request);
+
+    ResultMsg<User> getUser(Integer id);
+
+    ResultMsg<?> createUser(User user);
+
+    ResultMsg<?> updateUser(User user);
+
+    ResultMsg<?> deleteUser(Integer id);
 }

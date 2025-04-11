@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sethdev.spring_template.repository.SysRelationRepository">
+
+    <resultMap id="SysRelation" type="com.sethdev.spring_template.models.sys.SysRelation">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="role_id" property="roleId"/>
+        <result column="role_name" property="roleName"/>
+        <result column="group_id" property="groupId"/>
+        <result column="group_name" property="groupName"/>
+        <result column="enabled" property="enabled"/>
+        <result column="create_date" property="createDate"
+                typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="create_by" property="createBy"/>
+    </resultMap>
+
+    <insert id="insertSysRelations" parameterType="java.util.List">
+        INSERT INTO sys_relation (user_id, role_id, group_id, create_by)
+        VALUES
+        <foreach collection="relations" item="rel" separator=",">
+            (#{rel.userId}, #{rel.roleId}, #{rel.groupId}, #{rel.createBy})
+        </foreach>
+    </insert>
+
+    <select id="getSysRelationsByUser" parameterType="Integer" resultMap="SysRelation">
+        SELECT sr.*, r.name role_name, g.name group_name
+        FROM sys_relation sr
+        INNER JOIN `role` r ON r.id = sr.role_id
+        INNER JOIN `group` g ON g.id = sr.group_id
+        WHERE sr.user_id = #{userId}
+    </select>
+
+    <select id="getFirstSysRelationIdByUser" parameterType="Integer" resultType="Integer">
+        SELECT id FROM sys_relation WHERE user_id = #{userId} ORDER BY id LIMIT 1
+    </select>
+
+    <select id="getSysRelationIdByUserRoleGroup" parameterType="Map" resultType="Integer">
+        SELECT id FROM sys_relation
+        WHERE
+            user_id = ${userId}
+            AND role_id = ${roleId}
+            AND group_id = ${groupId}
+    </select>
+
+    <delete id="deleteSysRelationByIds" parameterType="List">
+        DELETE FROM sys_relation WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteSysRelationByUser" parameterType="Integer">
+        DELETE FROM sys_relation WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteSysRelationByRole" parameterType="Integer">
+        DELETE FROM sys_relation WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteSysRelationByGroup" parameterType="Integer">
+        DELETE FROM sys_relation WHERE group_id = #{groupId}
+    </delete>
+
+</mapper>

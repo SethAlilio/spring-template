@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sethdev.spring_template.repository.CustomDialogRepository">
+    <resultMap id="CustomDialog" type="com.sethdev.spring_template.models.sys.dialog.CustomDialog">
+        <result property="id" column="id_" jdbcType="NUMERIC"/>
+        <result property="name" column="name_" jdbcType="VARCHAR"/>
+        <result property="key" column="key_" jdbcType="VARCHAR"/>
+        <result property="type" column="type_" jdbcType="VARCHAR"/>
+        <result property="queryTable" column="query_table_" jdbcType="VARCHAR"/>
+        <result property="columns" column="columns_" jdbcType="VARCHAR"/>
+        <result property="filter" column="filter_" jdbcType="VARCHAR"/>
+        <result property="layout" column="layout_" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="whereCustomDialog">
+        <where>
+            <if test="search != null and search != ''">
+                <bind name="src" value="'%' + search +'%'"/>
+                LOWER(name_) LIKE LOWER(#{src}) OR LOWER(key_) LIKE LOWER(#{src})
+            </if>
+        </where>
+    </sql>
+
+    <insert id="create" parameterType="com.sethdev.spring_template.models.sys.dialog.CustomDialog"
+            useGeneratedKeys="true" keyColumn="id_" keyProperty="id">
+        INSERT INTO sys_custom_dialog
+        (name_,
+        key_,
+        type_,
+        query_table_,
+        columns_,
+        filter_,
+        layout_)
+        VALUES
+        (#{name},
+        #{key},
+        #{type},
+        #{queryTable},
+        #{columns},
+        #{filter},
+        #{layout})
+    </insert>
+
+    <update id="update" parameterType="com.sethdev.spring_template.models.sys.dialog.CustomDialog">
+        UPDATE sys_custom_dialog
+        SET
+        name_ = #{name},
+        key_ = #{key},
+        type_ = #{type},
+        query_table_ = #{queryTable},
+        columns_ = #{columns},
+        filter_ = #{filter},
+        layout_ = #{layout}
+        WHERE id_ = #{id}
+    </update>
+
+    <select id="getByKey" parameterType="String" resultMap="CustomDialog">
+        SELECT * FROM sys_custom_dialog WHERE key_ = #{key}
+    </select>
+
+    <select id="getIdByKey" parameterType="String" resultType="Integer">
+        SELECT id_ FROM sys_custom_dialog WHERE key_ = #{key}
+    </select>
+
+    <select id="getPrimaryKeyOfTable" parameterType="String" resultType="String">
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'bpmdb'
+        AND table_name = #{tableName}
+        AND column_key = 'PRI';
+    </select>
+
+    <select id="getCustomDialogList" parameterType="Map" resultMap="CustomDialog">
+        SELECT id_, name_, key_, type_ FROM sys_custom_dialog
+        <include refid="whereCustomDialog"/>
+        ORDER BY id_ DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="getCustomDialogListCount" parameterType="Map" resultType="Integer">
+        SELECT COUNT(0) FROM sys_custom_dialog
+        <include refid="whereCustomDialog"/>
+    </select>
+
+    <select id="getDialogColumns" parameterType="Integer" resultType="String">
+        SELECT columns_ FROM sys_custom_dialog WHERE id_ = #{id}
+    </select>
+
+    <select id="getDialogForSearchFieldOnChange" parameterType="Integer" resultMap="CustomDialog">
+        SELECT id_, type_, columns_ FROM sys_custom_dialog WHERE id_ = #{id}
+    </select>
+
+    <select id="getTableNames" resultType="String">
+        SELECT table_name FROM information_schema.tables WHERE table_schema = #{databaseName}
+    </select>
+
+    <select id="getTableColumns" parameterType="String" resultType="Map">
+        SHOW COLUMNS FROM ${table}
+    </select>
+
+    <select id="isExistingKey" parameterType="String" resultType="Boolean">
+        SELECT COUNT(0) > 0 FROM sys_custom_dialog WHERE key_ = #{key}
+    </select>
+
+    <delete id="delete" parameterType="Integer">
+        DELETE FROM sys_custom_dialog WHERE id_ = #{id}
+    </delete>
+
+</mapper>

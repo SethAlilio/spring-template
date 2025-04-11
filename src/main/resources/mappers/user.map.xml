@@ -11,15 +11,43 @@
         <result column="password" property="password"/>
         <result column="full_name" property="fullName"/>
         <result column="email" property="email"/>
+        <result column="permission" property="permission"/>
         <result column="relation_id" property="relationId"/>
         <result column="create_date" property="createDate"
                 typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="role_id" property="roleId"/>
         <result column="role" property="role"/>
+        <result column="group_id" property="groupId"/>
+        <result column="group" property="group"/>
     </resultMap>
 
-    <insert id="save" parameterType="com.sethdev.spring_template.models.User">
-        INSERT INTO user (username, password, full_name, email, role)
-        VALUES (#{username}, #{password}, #{fullName}, #{email}, #{role})
+    <sql id="whereUserList">
+        <where>
+            <if test="query != null and query.username != null and query.username != ''">
+                <bind name="likeUsername" value="'%' + query.username + '%'"/>
+                AND LOWER(u.username) LIKE LOWER(#{likeUsername})
+            </if>
+            <if test="query != null and query.fullName != null and query.fullName != ''">
+                <bind name="likeFullName" value="'%' + query.fullName + '%'"/>
+                AND LOWER(u.full_name) LIKE LOWER(#{likeFullName})
+            </if>
+            <if test="query != null and query.email != null and query.email != ''">
+                <bind name="likeEmail" value="'%' + query.email + '%'"/>
+                AND LOWER(u.email) LIKE LOWER(#{likeEmail})
+            </if>
+            <if test="query != null and query.roleId != null and query.roleId != ''">
+                AND sr.role_id = #{query.roleId}
+            </if>
+            <if test="query != null and query.groupId != null and query.groupId != ''">
+                AND sr.group_id = #{query.groupId}
+            </if>
+        </where>
+    </sql>
+
+    <insert id="insert" parameterType="com.sethdev.spring_template.models.User"
+        useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO user (username, password, full_name, email, permission, create_by)
+        VALUES (#{username}, #{password}, #{fullName}, #{email}, #{permission}, #{createBy})
     </insert>
 
     <select id="getById" parameterType="Integer" resultMap="User">
@@ -46,11 +74,42 @@
         SELECT id FROM user WHERE email = #{email}
     </select>
 
+    <select id="getUserList" parameterType="com.sethdev.spring_template.models.PagingRequest" resultMap="User">
+        SELECT u.id, u.username, u.full_name, u.email, u.relation_id, r.name `role`, g.name `group`,
+            u.enabled, u.create_date
+        FROM user u
+        LEFT JOIN sys_relation sr ON sr.id = u.relation_id
+        LEFT JOIN `role` r ON r.id = sr.role_id
+        LEFT JOIN `group` g ON g.id = sr.group_id
+        <include refid="whereUserList"/>
+        ORDER BY u.id DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="getUserListCount" parameterType="com.sethdev.spring_template.models.PagingRequest" resultType="Integer">
+        SELECT COUNT(0)
+        FROM user u
+        LEFT JOIN sys_relation sr ON sr.id = u.relation_id
+        LEFT JOIN `role` r ON r.id = sr.role_id
+        LEFT JOIN `group` g ON g.id = sr.group_id
+        <include refid="whereUserList"/>
+    </select>
+
+    <select id="getUser" parameterType="Integer" resultMap="User">
+        SELECT u.id, u.username, u.full_name, u.email, u.relation_id, r.name `role`, g.name `group`,
+            u.permission, u.enabled, u.create_date
+        FROM user u
+        LEFT JOIN sys_relation sr ON sr.id = u.relation_id
+        LEFT JOIN `role` r ON r.id = sr.role_id
+        LEFT JOIN `group` g ON g.id = sr.group_id
+        WHERE u.id = #{id}
+    </select>
+
     <select id="getUsersByGroupId" resultMap="User" parameterType="Integer">
         SELECT u.id, u.username, u.full_name, u.email, u.relation_id, r.name `role`
         FROM user u
-        INNER JOIN sys_relation sr ON sr.user_id = u.id
-        INNER JOIN role r ON r.id = sr.role_id
+        INNER JOIN sys_relation sr ON sr.id = u.relation_id
+        INNER JOIN `role` r ON r.id = sr.role_id
         <where>
             sr.group_id = #{groupId}
             <if test="query.fullName != null and query.fullName != ''">
@@ -68,8 +127,8 @@
     <select id="getUsersByGroupIdCount" resultType="Integer" parameterType="Integer">
         SELECT COUNT(0)
         FROM user u
-        INNER JOIN sys_relation sr ON sr.user_id = u.id
-        INNER JOIN role r ON r.id = sr.role_id
+        INNER JOIN sys_relation sr ON sr.id = u.relation_id
+        INNER JOIN `role` r ON r.id = sr.role_id
         <where>
             sr.group_id = #{groupId}
             <if test="query.fullName != null and query.fullName != ''">
@@ -82,11 +141,22 @@
         </where>
     </select>
 
+    <update id="updateUser" parameterType="com.sethdev.spring_template.models.User">
+        UPDATE user
+        SET username = #{username},
+            full_name = #{fullName},
+            email = #{email},
+            enabled = #{enabled},
+            permission = #{permission},
+            relation_id = #{relationId}
+        WHERE id = #{id}
+    </update>
+
     <update id="updateDetails" parameterType="com.sethdev.spring_template.models.User">
         UPDATE user
         SET username = #{username},
-        full_name = #{fullName},
-        email = #{email}
+            full_name = #{fullName},
+            email = #{email}
         WHERE id = #{id}
     </update>
 
@@ -94,4 +164,11 @@
         UPDATE user SET password = #{password} WHERE id = #{id}
     </update>
 
+    <update id="updateRelationId" parameterType="Map">
+        UPDATE user SET relation_id = #{relationId} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUser" parameterType="Integer">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
 </mapper>
