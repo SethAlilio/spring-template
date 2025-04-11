@@ -36,7 +36,7 @@
 
     <!-- SYS PERMISSION -->
 
-    <insert id="insertSysPermissions" parameterType="java.util.List">
+    <insert id="insertSysPermissionsRoleBased" parameterType="java.util.List">
         INSERT INTO sys_permission (role_id, resource_id, type, create_by)
         VALUES
         <foreach collection="permissions" item="perm" separator=",">
@@ -44,8 +44,20 @@
         </foreach>
     </insert>
 
+    <insert id="insertSysPermissionsUserBased" parameterType="java.util.List">
+        INSERT INTO sys_permission (user_id, resource_id, type, create_by)
+        VALUES
+        <foreach collection="permissions" item="perm" separator=",">
+            (#{perm.userId}, #{perm.resourceId}, #{perm.type}, #{perm.createBy})
+        </foreach>
+    </insert>
+
     <select id="getSysPermissionsByRoleId" parameterType="Integer" resultMap="SysPermission">
         SELECT id, resource_id FROM sys_permission WHERE role_id = #{roleId}
+    </select>
+
+    <select id="getSysPermissionsByUserId" parameterType="Integer" resultMap="SysPermission">
+        SELECT id, resource_id FROM sys_permission WHERE user_id = #{userId}
     </select>
 
     <delete id="deleteSysPermissionsByRoleId" parameterType="Integer">

@@ -15,9 +15,11 @@ public interface SysResourceRepository {
 
     /** Sys Permission **/
 
-    void insertSysPermissions(@Param("permissions")List<SysPermission> permissions);
+    void insertSysPermissionsRoleBased(@Param("permissions")List<SysPermission> permissions);
+    void insertSysPermissionsUserBased(@Param("permissions")List<SysPermission> permissions);
 
     List<SysPermission> getSysPermissionsByRoleId(Integer roleId);
+    List<SysPermission> getSysPermissionsByUserId(Integer userId);
 
     void deleteSysPermissionsByRoleId(Integer roleId);
 

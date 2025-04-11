@@ -1,18 +1,19 @@
 package com.sethdev.spring_template.service.impl;
 
-import com.sethdev.spring_template.models.PagingRequest;
-import com.sethdev.spring_template.models.ResultMsg;
-import com.sethdev.spring_template.models.ResultPage;
-import com.sethdev.spring_template.models.User;
+import com.sethdev.spring_template.models.*;
 import com.sethdev.spring_template.models.constants.Crud;
 import com.sethdev.spring_template.models.constants.UserPermissionType;
+import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysRelation;
+import com.sethdev.spring_template.models.sys.SysResource;
 import com.sethdev.spring_template.repository.SysRelationRepository;
 import com.sethdev.spring_template.repository.UserRepository;
 import com.sethdev.spring_template.service.ContextService;
+import com.sethdev.spring_template.service.SysResourceService;
 import com.sethdev.spring_template.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserRepository userRepo;
+
+    @Autowired
+    SysResourceService sysResourceService;
 
     @Autowired
     ContextService contextService;
@@ -112,8 +116,8 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.isBlank(user.getFullName())) {
             missing.add("Full Name");
         }
-        if (StringUtils.isBlank(user.getFullName())) {
-            missing.add("Full Name");
+        if (StringUtils.isBlank(user.getPermission())) {
+            missing.add("Permission");
         }
 
         if (StringUtils.isNotBlank(user.getEmail())) {
@@ -142,21 +146,21 @@ public class UserServiceImpl implements UserService {
             return validation;
         }
         Integer createBy = contextService.getCurrentUserId();
-        user.setPermission(UserPermissionType.ROLE.name());
+        //user.setPermission(UserPermissionType.ROLE.name());
         user.setCreateBy(createBy);
         user.setPassword(encoder.encode(defaultPassword));
         userRepo.insert(user);
 
         sysRelRepo.insertSysRelations(
                 user.getRelationList().stream()
-                    .map(x -> {
+                    .peek(x -> {
                         x.setUserId(user.getId());
                         x.setCreateBy(createBy);
-                        return x;
                     })
                     .collect(Collectors.toList()));
 
 
+        //Relation
         SysRelation activePosition = user.getRelationList().stream()
                 .filter(x -> x.getIsActive() != null && x.getIsActive())
                 .findFirst().orElse(null);
@@ -172,6 +176,23 @@ public class UserServiceImpl implements UserService {
             userRepo.updateRelationId(
                     sysRelRepo.getFirstSysRelationIdByUser(user.getId()),
                     user.getId());
+        }
+
+        //Permission
+        if (MapUtils.isNotEmpty(user.getSelectedPermissions())) {
+            List<SysPermission> permissions = user.getSelectedPermissions().keySet()
+                    .stream()
+                    .map(x -> {
+                        SysPermission perm = SysPermission.builder()
+                                .userId(user.getId())
+                                .resourceId(Integer.valueOf(x))
+                                .type(2)
+                                .build();
+                        perm.setCreateBy(contextService.getCurrentUserId());
+                        return perm;
+                    })
+                    .collect(Collectors.toList());
+            sysResourceService.insertSysPermissionsUserBased(permissions);
         }
 
         return new ResultMsg<>().success("User created");
@@ -201,6 +222,19 @@ public class UserServiceImpl implements UserService {
         user.setRelationList(relations.stream()
                 .peek(x -> x.setIsActive(user.getRelationId() != null && user.getRelationId().equals(x.getId())))
                 .collect(Collectors.toList()));
+
+        List<SysResource> resources = sysResourceService.getAllResources();
+        List<SysPermission> permissions = sysResourceService.getSysPermissionsByUserId(id);
+
+        List<ResourceNode<Integer>> permissionTree = sysResourceService.convertSysResourceListToListResourceNode(
+                resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
+        );
+        Map<String, ResourceNodeCheck> selectedPerms = sysResourceService.convertSysPermissionListToPermissionNodeCheckMap(
+                permissions, resources
+        );
+        user.setPermissionTree(permissionTree);
+        user.setSelectedPermissions(selectedPerms);
+
         return new ResultMsg<User>().success(user);
     }
 
@@ -213,6 +247,7 @@ public class UserServiceImpl implements UserService {
 
         userRepo.updateUser(user);
 
+        //Relation
         if (CollectionUtils.isEmpty(user.getRelationList())) {
             sysRelRepo.deleteSysRelationByUser(user.getId());
             user.setRelationId(null);
@@ -265,6 +300,50 @@ public class UserServiceImpl implements UserService {
                             activePosition.getRoleId(),
                             activePosition.getGroupId()) : null);
         }
+
+        //Permission
+        List<SysPermission> newPermissions = user.getSelectedPermissions().keySet()
+                .stream()
+                .map(x -> {
+                    SysPermission perm = SysPermission.builder()
+                            .userId(user.getId())
+                            .resourceId(Integer.valueOf(x))
+                            .type(2)
+                            .build();
+                    perm.setCreateBy(contextService.getCurrentUserId());
+                    return perm;
+                })
+                .collect(Collectors.toList());
+
+        List<SysPermission> currentPermissions = sysResourceService.getSysPermissionsByUserId(user.getId());
+
+        List<Integer> newPermsIds = user.getSelectedPermissions().keySet().stream()
+                .map(Integer::valueOf)
+                .collect(Collectors.toList());
+
+        List<Integer> currentPermsIds = currentPermissions.stream()
+                .map(SysPermission::getId)
+                .collect(Collectors.toList());
+
+        List<SysPermission> toAdd = CollectionUtils.isEmpty(currentPermissions)
+                ? newPermissions
+                : CollectionUtils.isNotEmpty(newPermissions)
+                    ? newPermissions.stream()
+                        .filter(x -> !currentPermsIds.contains(x.getId())).collect(Collectors.toList())
+                    : null;
+
+        List<Integer> toDelete = currentPermsIds.stream()
+                .filter(x -> !newPermsIds.contains(x))
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isNotEmpty(toAdd)) {
+            sysResourceService.insertSysPermissionsUserBased(toAdd);
+        }
+
+        if (CollectionUtils.isNotEmpty(toDelete)) {
+            sysResourceService.deletePermissionsByIds(toDelete);
+        }
+
         userRepo.updateUser(user);
         return new ResultMsg<>().success("User updated");
     }

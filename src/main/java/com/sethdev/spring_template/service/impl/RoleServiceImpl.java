@@ -52,7 +52,7 @@ public class RoleServiceImpl implements RoleService {
                     return perm;
                 })
                 .collect(Collectors.toList());
-        sysResourceService.insertSysPermissions(permissions);
+        sysResourceService.insertSysPermissionsRoleBased(permissions);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class RoleServiceImpl implements RoleService {
           resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
         );
         role.setPermissionTree(resourceNodes);
-        role.setSelectedPermissions(convertSysPermissionListToPermissionNodeCheckMap(permissions, resources));
+        role.setSelectedPermissions(sysResourceService.convertSysPermissionListToPermissionNodeCheckMap(permissions, resources));
         return role;
     }
 
@@ -94,8 +94,9 @@ public class RoleServiceImpl implements RoleService {
         }
     }*/
 
+    //TODO: Use SysResourceService
     //Format the resources for the `value` property of PrimeReact's Tree component
-    public Map<String, ResourceNodeCheck> convertSysPermissionListToPermissionNodeCheckMap(
+    /*public Map<String, ResourceNodeCheck> convertSysPermissionListToPermissionNodeCheckMap(
             List<SysPermission> permissions, List<SysResource> resources) {
         List<Integer> permittedResourceIds = permissions.stream()
                 .map(SysPermission::getResourceId)
@@ -104,10 +105,11 @@ public class RoleServiceImpl implements RoleService {
         permissions.forEach(x -> selectedPermissions.put(String.valueOf(x.getResourceId()),
                 getAsPermissionNodeCheck(x.getResourceId(), permittedResourceIds, resources)));
         return selectedPermissions;
-    }
+    }*/
 
+    //TODO: Use SysResourceService
     //Format the permission for the `selectedKey` property of PrimeReact's Tree component
-    public ResourceNodeCheck getAsPermissionNodeCheck(Integer resourceId, List<Integer> permissions,
+    /*public ResourceNodeCheck getAsPermissionNodeCheck(Integer resourceId, List<Integer> permissions,
                                                       List<SysResource> resources) {
         SysResource resource = resources.stream().filter(x -> x.getId().equals(resourceId))
                 .findFirst().orElse(null);
@@ -127,7 +129,7 @@ public class RoleServiceImpl implements RoleService {
             }
         }
         return new ResourceNodeCheck(false, false);
-    }
+    }*/
 
     @Override
     public ResultPage<Role> getRoleList(PagingRequest<Role> request) {
@@ -181,7 +183,7 @@ public class RoleServiceImpl implements RoleService {
                     .collect(Collectors.toList());
 
             if (CollectionUtils.isNotEmpty(toAdd)) {
-                sysResourceService.insertSysPermissions(toAdd);
+                sysResourceService.insertSysPermissionsRoleBased(toAdd);
             }
 
             if (CollectionUtils.isNotEmpty(toDelete)) {
