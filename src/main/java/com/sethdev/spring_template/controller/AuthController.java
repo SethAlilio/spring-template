@@ -63,7 +63,8 @@ public class AuthController {
                         userDetails.getUsername(),
                         userDetails.getFullName(),
                         userDetails.getEmail(),
-                        null,//roles,
+                        userDetails.getRole(),
+                        userDetails.getGroup(),
                         jwtCookie.toString().split(";")[0]));
     }
 

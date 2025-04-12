@@ -55,7 +55,13 @@
     </select>
 
     <select id="findByUsername" parameterType="String" resultMap="User">
-        SELECT * FROM user WHERE username = #{username}
+        SELECT u.id, u.username, u.password, u.full_name, u.email, u.relation_id, r.name `role`,
+            g.name `group`, u.permission, u.enabled, u.create_date
+        FROM user u
+        LEFT JOIN sys_relation sr ON sr.id = u.relation_id
+        LEFT JOIN `role` r ON r.id = sr.role_id
+        LEFT JOIN `group` g ON g.id = sr.group_id
+        WHERE u.username = #{username}
     </select>
 
     <select id="existsByUsername" parameterType="String" resultType="Boolean">

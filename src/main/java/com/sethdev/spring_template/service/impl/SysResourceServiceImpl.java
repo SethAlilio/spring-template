@@ -1,12 +1,16 @@
 package com.sethdev.spring_template.service.impl;
 
+import com.sethdev.spring_template.models.AppMenuItem;
 import com.sethdev.spring_template.models.ResourceNode;
 import com.sethdev.spring_template.models.ResourceNodeCheck;
+import com.sethdev.spring_template.models.User;
+import com.sethdev.spring_template.models.constants.UserPermissionType;
 import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysResource;
 import com.sethdev.spring_template.repository.SysResourceRepository;
 import com.sethdev.spring_template.service.SysResourceService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +57,71 @@ public class SysResourceServiceImpl implements SysResourceService {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * @param user
+     * @return Resources as AppMenuItem to match frontend
+     */
+    @Override
+    public List<AppMenuItem> getUserAppMenuItems(User user) {
+        if (UserPermissionType.ROLE.name().equals(user.getPermission())) {
+            List<SysResource> roleResources = sysResourceRepo.getResourcesByRole(user.getRoleId());
+            return convertSysResourceListToAppMenuItemList(
+                    roleResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    roleResources);
+        } else if (UserPermissionType.USER.name().equals(user.getPermission())) {
+            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(user.getId());
+            return convertSysResourceListToAppMenuItemList(
+                    userResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    userResources);
+        }
+        return null;
+    }
+
+    /**
+     * Same as {@link #getUserAppMenuItems(User)} but different paramenter
+     * @param userId
+     * @return Resources as AppMenuItem to match frontend
+     */
+    @Override
+    public List<AppMenuItem> getUserAppMenuItems(Integer userId) {
+        String permission = sysResourceRepo.getUserResourcePermission(userId);
+        if (UserPermissionType.ROLE.name().equals(permission)) {
+            List<SysResource> roleResources = sysResourceRepo.getResourcesByUserRole(userId);
+            return convertSysResourceListToAppMenuItemList(
+                    roleResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    roleResources);
+        } else if (UserPermissionType.USER.name().equals(permission)) {
+            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(userId);
+            return convertSysResourceListToAppMenuItemList(
+                    userResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    userResources);
+        }
+        return null;
+    }
+
+    @Override
+    public List<AppMenuItem> convertSysResourceListToAppMenuItemList(List<SysResource> currentIteration,
+                                                                     List<SysResource> sysResources) {
+        if (CollectionUtils.isNotEmpty(currentIteration)) {
+            return currentIteration.stream()
+                    .map(res -> AppMenuItem.builder()
+                            .label(res.getName())
+                            .icon(StringUtils.isNotBlank(res.getIcon()) ? "pi pi-fw " + res.getIcon() : "")
+                            .to(res.getPath())
+                            .items(convertSysResourceListToAppMenuItemList(
+                                    sysResources.stream()
+                                              .filter(x -> x.getParentId() != null && x.getParentId().equals(res.getId()))
+                                              .collect(Collectors.toList()),
+                                    sysResources))
+                            .build()
+                    )
+                    .collect(Collectors.toList());
+        } else {
+            return null;
+        }
+    }
+
     /** Sys Permission **/
 
     @Override
@@ -121,6 +190,5 @@ public class SysResourceServiceImpl implements SysResourceService {
         }
         return new ResourceNodeCheck(false, false);
     }
-
 
 }

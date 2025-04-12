@@ -13,6 +13,24 @@ import java.util.List;
 public interface SysResourceRepository {
     List<SysResource> getAllResources();
 
+    /**
+     * @param roleId
+     * @return Resources based on role's permissions
+     */
+    List<SysResource> getResourcesByRole(Integer roleId);
+
+    /**
+     * @param userId
+     * @return Resources based on user specific permissions
+     */
+    List<SysResource> getResourcesByUser(Integer userId);
+
+    /**
+     * @param userId
+     * @return Resources based on user's role's permissions
+     */
+    List<SysResource> getResourcesByUserRole(Integer userId);
+
     /** Sys Permission **/
 
     void insertSysPermissionsRoleBased(@Param("permissions")List<SysPermission> permissions);
@@ -20,6 +38,8 @@ public interface SysResourceRepository {
 
     List<SysPermission> getSysPermissionsByRoleId(Integer roleId);
     List<SysPermission> getSysPermissionsByUserId(Integer userId);
+
+    String getUserResourcePermission(Integer userId);
 
     void deleteSysPermissionsByRoleId(Integer roleId);
 

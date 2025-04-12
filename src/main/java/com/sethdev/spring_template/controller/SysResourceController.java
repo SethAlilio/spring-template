@@ -1,14 +1,12 @@
 package com.sethdev.spring_template.controller;
 
+import com.sethdev.spring_template.models.AppMenuItem;
 import com.sethdev.spring_template.models.ResourceNode;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.service.SysResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,5 +28,16 @@ public class SysResourceController {
             return new ResultMsg<List<ResourceNode<Integer>>>().failure("Error getting resources tree");
         }
     }
+
+    @PostMapping("/appMenu")
+    public ResultMsg<List<AppMenuItem>> getUserAppMenuItems(@RequestParam("userId") Integer userId) {
+        try {
+            return new ResultMsg<List<AppMenuItem>>()
+                    .success(sysResourceService.getUserAppMenuItems(userId));
+        } catch (Exception e) {
+            return new ResultMsg<List<AppMenuItem>>().failure("Error getting app menus");
+        }
+    }
+
 
 }

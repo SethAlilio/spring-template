@@ -37,7 +37,6 @@ public class User extends BaseModel {
     //Current group
     private Integer groupId;
     private String group;
-    private LocalDateTime createDate;
 
     private List<SysRelation> relationList;
 

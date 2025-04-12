@@ -1,7 +1,9 @@
 package com.sethdev.spring_template.service;
 
+import com.sethdev.spring_template.models.AppMenuItem;
 import com.sethdev.spring_template.models.ResourceNode;
 import com.sethdev.spring_template.models.ResourceNodeCheck;
+import com.sethdev.spring_template.models.User;
 import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysResource;
 
@@ -15,6 +17,13 @@ public interface SysResourceService {
 
     List<ResourceNode<Integer>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
                                                                            List<SysResource> resources);
+
+    List<AppMenuItem> getUserAppMenuItems(User user);
+
+    List<AppMenuItem> getUserAppMenuItems(Integer userId);
+
+    List<AppMenuItem> convertSysResourceListToAppMenuItemList(List<SysResource> currentIteration,
+                                                              List<SysResource> sysResources);
 
     void insertSysPermissionsRoleBased(List<SysPermission> permissions);
     void insertSysPermissionsUserBased(List<SysPermission> permissions);
