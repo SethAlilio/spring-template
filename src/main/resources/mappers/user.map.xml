@@ -41,6 +41,15 @@
             <if test="query != null and query.groupId != null and query.groupId != ''">
                 AND sr.group_id = #{query.groupId}
             </if>
+
+            <if test="query != null and query.role != null and query.role != ''">
+                <bind name="likeRole" value="'%' + query.role + '%'"/>
+                AND LOWER(r.name) LIKE LOWER(#{likeRole})
+            </if>
+            <if test="query != null and query.group != null and query.group != ''">
+                <bind name="likeGroup" value="'%' + query.group + '%'"/>
+                AND LOWER(g.name) LIKE LOWER(#{likeGroup})
+            </if>
         </where>
     </sql>
 
