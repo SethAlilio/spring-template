@@ -50,6 +50,9 @@
                 <bind name="likeDescription" value="'%' + query.description + '%'"/>
                 AND LOWER(description) LIKE LOWER(#{likeDescription})
             </if>
+            <if test="query != null and query.enabled != null">
+                AND enabled = #{enabled}
+            </if>
         </where>
     </sql>
 
