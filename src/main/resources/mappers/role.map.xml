@@ -51,7 +51,7 @@
                 AND LOWER(description) LIKE LOWER(#{likeDescription})
             </if>
             <if test="query != null and query.enabled != null">
-                AND enabled = #{enabled}
+                AND enabled = #{query.enabled}
             </if>
         </where>
     </sql>
