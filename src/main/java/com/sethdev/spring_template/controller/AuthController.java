@@ -68,6 +68,7 @@ public class AuthController {
                         jwtCookie.toString().split(";")[0]));
     }
 
+    //TODO: Update this function
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         if (!signUpRequest.isCompleteInput()) {

@@ -2,10 +2,12 @@ package com.sethdev.spring_template.models;
 
 import com.sethdev.spring_template.models.base.BaseModel;
 import com.sethdev.spring_template.models.sys.SysRelation;
+import com.sethdev.spring_template.models.sys.SysResource;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -42,9 +44,14 @@ public class User extends BaseModel {
 
 
     /** User specific permissions */
-    private List<ResourceNode<Integer>> permissionTree;
+    private List<ResourceNode<SysResource>> permissionTree;
 
     private Map<String, ResourceNodeCheck> selectedPermissions;
+
+    public User(Integer id, String password) {
+        super(id);
+        this.password = password;
+    }
 
     public User(String username, String password, String fullName, String email) {
         this.username = username;
@@ -56,5 +63,15 @@ public class User extends BaseModel {
     public boolean isCompleteInput() {
         return StringUtils.isNotBlank(username)
                 && StringUtils.isNotBlank(fullName);
+    }
+
+    public SysRelation getActivePosition() {
+        if (CollectionUtils.isNotEmpty(this.getRelationList())) {
+            return this.getRelationList().stream()
+                    .filter(SysRelation::getIsActive)
+                    .findFirst().orElse(null);
+        } else {
+            return null;
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.sethdev.spring_template.models.*;
 import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysResource;
 import com.sethdev.spring_template.repository.RoleRepository;
+import com.sethdev.spring_template.repository.SysRelationRepository;
 import com.sethdev.spring_template.service.ContextService;
 import com.sethdev.spring_template.service.RoleService;
 import com.sethdev.spring_template.service.SysResourceService;
@@ -31,6 +32,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Autowired
     SysResourceService sysResourceService;
+
+    @Autowired
+    SysRelationRepository sysRelationRepo;
 
     @Override
     public void createRole(Role role) throws BusinessException {
@@ -65,7 +69,7 @@ public class RoleServiceImpl implements RoleService {
         log.info("getRole | resources: " + GsonUtils.toJson(resources));
         List<SysPermission> permissions = roleRepo.getRolePermissions(id);
 
-        List<ResourceNode<Integer>> resourceNodes = sysResourceService.convertSysResourceListToListResourceNode(
+        List<ResourceNode<SysResource>> resourceNodes = sysResourceService.convertSysResourceListToListResourceNode(
           resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
         );
         role.setPermissionTree(resourceNodes);
@@ -194,8 +198,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public void deleteRole(Integer id) {
-        roleRepo.deleteRole(id);
         sysResourceService.deletePermissionsByRoleId(id);
+        sysRelationRepo.deleteSysRelationByRole(id);
+        roleRepo.deleteRole(id);
     }
 
 }

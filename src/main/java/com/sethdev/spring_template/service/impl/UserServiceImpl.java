@@ -2,7 +2,6 @@ package com.sethdev.spring_template.service.impl;
 
 import com.sethdev.spring_template.models.*;
 import com.sethdev.spring_template.models.constants.Crud;
-import com.sethdev.spring_template.models.constants.UserPermissionType;
 import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysRelation;
 import com.sethdev.spring_template.models.sys.SysResource;
@@ -55,41 +54,6 @@ public class UserServiceImpl implements UserService {
     String defaultPassword;
 
     @Override
-    public ResultMsg<?> updateUserDetails(User user) {
-        if (!user.isCompleteInput()) {
-            return new ResultMsg<>().failure("Required fields must be filled");
-        }
-        Map<String, Object> result = new HashMap<>();
-        result.put("needRelog", false);
-        User currentUser = userRepo.getById(user.getId());
-        if (!currentUser.getUsername().equals(user.getUsername())) {
-            Integer id = userRepo.getIdByUsername(user.getUsername());
-            if (id != null && !id.equals(user.getId())) {
-                return new ResultMsg<>().failure("Username is already taken");
-            }
-            result.put("needRelog", true); //Force user to relog when there's a change in username
-        }
-        if (StringUtils.isNotBlank(user.getEmail()) && !StringUtils.equals(currentUser.getEmail(), user.getUsername())) {
-            Integer id = userRepo.getIdByEmail(user.getEmail());
-            if (id != null && !id.equals(user.getId())) {
-                return new ResultMsg<>().failure("Email is already in use");
-            }
-        }
-        userRepo.updateDetails(user);
-        return new ResultMsg<>().success(result, "Details updated");
-    }
-
-    @Override
-    public ResultMsg<?> updatePassword(User user) {
-        if (StringUtils.isBlank(user.getPassword())) {
-            return new ResultMsg<>().failure("Password cannot be empty");
-        }
-        user.setPassword(encoder.encode(user.getPassword()));
-        userRepo.updatePassword(user);
-        return new ResultMsg<>().success("Password updated");
-    }
-
-    @Override
     public ResultPage<User> getUsersFromGroup(PagingRequest<Map<String, Object>> request) {
         List<User> userList = userRepo.getUsersFromGroup(request);
         int totalCount = request.getStart() == 0 && userList.size() < request.getLimit()
@@ -101,7 +65,6 @@ public class UserServiceImpl implements UserService {
                 .totalCount(totalCount)
                 .build();
     }
-
 
     public ResultMsg<?> isValidUser(User user, Crud action) {
         List<String> missing = new ArrayList<>();
@@ -128,7 +91,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (CollectionUtils.isEmpty(user.getRelationList())) {
-            missing.add("Role-Group Relation");
+            missing.add("Positions");
         }
         if (missing.isEmpty()) {
             return new ResultMsg<>().success();
@@ -169,13 +132,12 @@ public class UserServiceImpl implements UserService {
             Integer sysRelId = sysRelRepo.getSysRelationIdByUserRoleGroup(
                     user.getId(), activePosition.getRoleId(), activePosition.getGroupId());
             if (sysRelId != null) {
-                userRepo.updateRelationId(sysRelId, user.getId());
+                userRepo.updateRelationId(user.getId(), sysRelId);
             }
         } else {
             //If user didn't set an active position, will set the first sys_relation record
-            userRepo.updateRelationId(
-                    sysRelRepo.getFirstSysRelationIdByUser(user.getId()),
-                    user.getId());
+            userRepo.updateRelationId(user.getId(),
+                    sysRelRepo.getFirstSysRelationIdByUser(user.getId()));
         }
 
         //Permission
@@ -226,7 +188,7 @@ public class UserServiceImpl implements UserService {
         List<SysResource> resources = sysResourceService.getAllResources();
         List<SysPermission> permissions = sysResourceService.getSysPermissionsByUserId(id);
 
-        List<ResourceNode<Integer>> permissionTree = sysResourceService.convertSysResourceListToListResourceNode(
+        List<ResourceNode<SysResource>> permissionTree = sysResourceService.convertSysResourceListToListResourceNode(
                 resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
         );
         Map<String, ResourceNodeCheck> selectedPerms = sysResourceService.convertSysPermissionListToPermissionNodeCheckMap(
@@ -286,13 +248,6 @@ public class UserServiceImpl implements UserService {
             SysRelation activePosition = user.getRelationList().stream()
                     .filter(SysRelation::getIsActive)
                     .findFirst().orElse(null);
-            /*userRepo.updateRelationId(activePosition != null
-                   ? sysRelRepo.getSysRelationIdByUserRoleGroup(
-                       user.getId(),
-                       activePosition.getRoleId(),
-                       activePosition.getGroupId()) : null,
-                   user.getId());*/
-
 
             user.setRelationId(activePosition != null
                             ? sysRelRepo.getSysRelationIdByUserRoleGroup(
@@ -349,10 +304,73 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public ResultMsg<?> updateUserDetails(User user) {
+        if (!user.isCompleteInput()) {
+            return new ResultMsg<>().failure("Required fields must be filled");
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("needRelog", false);
+        User currentUser = userRepo.getById(user.getId());
+        if (!currentUser.getUsername().equals(user.getUsername())) {
+            Integer id = userRepo.getIdByUsername(user.getUsername());
+            if (id != null && !id.equals(user.getId())) {
+                return new ResultMsg<>().failure("Username is already taken");
+            }
+            result.put("needRelog", true); //Force user to relog when there's a change in username
+        }
+
+        if (StringUtils.isNotBlank(user.getEmail())) {
+            Integer id = userRepo.getIdByEmail(user.getEmail());
+            if (id != null && !id.equals(user.getId())) {
+                return new ResultMsg<>().failure("Email is already in use");
+            }
+        }
+        userRepo.updateDetails(user);
+        return new ResultMsg<>().success(result, "Details updated");
+    }
+
+    @Override
+    public ResultMsg<?> updatePassword(Integer userId, String oldPassword, String newPassword) {
+        if (StringUtils.isBlank(oldPassword)) {
+            return new ResultMsg<>().failure("Input old password");
+        }
+        if (StringUtils.isBlank(newPassword)) {
+            return new ResultMsg<>().failure("New password cannot be empty");
+        }
+
+        String currentPassword = userRepo.getPassword(userId);
+        if (!encoder.matches(oldPassword, currentPassword)) {
+            return new ResultMsg<>().failure("Old password doesn't match");
+        }
+
+        userRepo.updatePassword(new User(userId, encoder.encode(newPassword)));
+        return new ResultMsg<>().success("Password updated");
+    }
+
+    @Override
+    public ResultMsg<?> updateUserActivePosition(Integer userId, Integer relationId) {
+        //Validation
+        if (userId == null) {
+            return new ResultMsg<>().failure("User is empty");
+        }
+        if (relationId == null) {
+            return new ResultMsg<>().failure("No active position set");
+        }
+        userRepo.updateRelationId(userId, relationId);
+        return new ResultMsg<>().success("Active position updated");
+    }
+
+    @Override
+    public void updateUserEnabled(Integer userId, Boolean enabled) {
+        userRepo.updateEnabled(userId, enabled);
+    }
+
+    @Override
     public ResultMsg<?> deleteUser(Integer id) {
         try {
-            userRepo.deleteUser(id);
             sysRelRepo.deleteSysRelationByUser(id);
+            sysResourceService.deleteSysPermissionsByUserId(id);
+            userRepo.deleteUser(id);
             return new ResultMsg<>().success("User deleted");
         } catch (Exception e) {
             return new ResultMsg<>().failure("Error deleting user");

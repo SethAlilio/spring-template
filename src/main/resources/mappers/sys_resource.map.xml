@@ -9,9 +9,11 @@
         <id column="id" property="id"/>
         <result column="parent_id" property="parentId"/>
         <result column="type" property="type"/>
+        <result column="category" property="category"/>
         <result column="name" property="name"/>
         <result column="enabled" property="enabled"/>
         <result column="icon" property="icon"/>
+        <result column="resource_path" property="resourcePath"/>
         <result column="path" property="path"/>
         <result column="sort" property="sort"/>
         <result column="create_date" property="createDate"
@@ -30,32 +32,98 @@
         <result column="create_by" property="createBy"/>
     </resultMap>
 
+    <insert id="insertSysResource" parameterType="com.sethdev.spring_template.models.sys.SysResource"
+        useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        INSERT INTO sys_resource
+        (parent_id,
+        `type`,
+        category,
+        `name`,
+        enabled,
+        icon,
+        resource_path,
+        `path`,
+        sort,
+        create_by)
+        VALUES
+        (#{parentId},
+        #{type},
+        #{category},
+        #{name},
+        #{enabled},
+        #{icon},
+        #{resourcePath},
+        #{path},
+        #{sort},
+        #{createBy})
+    </insert>
+
     <select id="getAllResources" resultMap="SysResource">
         SELECT * FROM sys_resource
     </select>
 
-    <select id="getResourcesByRole" resultMap="SysResource" parameterType="Integer">
+    <select id="getResourcesByRole" resultMap="SysResource" parameterType="Map">
         SELECT sRes.*
         FROM sys_permission sp
         INNER JOIN sys_resource sRes ON sRes.id = sp.resource_id
         WHERE sp.role_id = #{roleId}
+            AND sRes.category = #{category}
     </select>
 
-    <select id="getResourcesByUser" resultMap="SysResource" parameterType="Integer">
+    <select id="getResourcesByUser" resultMap="SysResource" parameterType="Map">
         SELECT sRes.*
         FROM sys_permission sp
         INNER JOIN sys_resource sRes ON sRes.id = sp.resource_id
         WHERE sp.user_id = #{userId}
+            AND sRes.category = #{category}
     </select>
 
-    <select id="getResourcesByUserRole" resultMap="SysResource" parameterType="Integer">
+    <select id="getResourcesByUserRole" resultMap="SysResource" parameterType="Map">
         SELECT sRes.*
         FROM user u
         INNER JOIN sys_relation sRel ON sRel.id = u.relation_id
         INNER JOIN sys_permission sp ON sp.role_id = sRel.role_id
         INNER JOIN sys_resource sRes ON sRes.id = sp.resource_id
         WHERE u.id = #{userId}
+            AND sRes.category = #{category}
     </select>
+
+    <select id="getPath" parameterType="Integer" resultType="String">
+        SELECT path FROM sys_resource WHERE id = #{id}
+    </select>
+
+    <select id="getCategory" parameterType="Integer" resultType="String">
+        SELECT category FROM sys_resource WHERE id = #{id}
+    </select>
+
+    <update id="updateSysResource" parameterType="com.sethdev.spring_template.models.sys.SysResource">
+        UPDATE sys_resource
+        SET `name` = #{name},
+            category = #{category},
+            enabled = #{enabled},
+            icon = #{icon},
+            resource_path = #{resourcePath},
+            sort = #{sort}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePath" parameterType="Map">
+        UPDATE sys_resource SET path = #{path} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteSysResource" parameterType="Map">
+        DELETE FROM sys_resource
+        <bind name="likePath" value="path + '.%'"/>
+        WHERE id = #{id} OR `path` LIKE #{likePath}
+    </delete>
+
+    <delete id="deleteSysPermissionByResource" parameterType="Map">
+        DELETE sp
+        FROM sys_permission sp
+        INNER JOIN sys_resource sr ON sr.id = sp.resource_id
+        <bind name="likePath" value="path + '.%'"/>
+        WHERE sr.id = #{sysResourceId} OR sr.path LIKE #{likePath}
+    </delete>
 
     <!-- SYS PERMISSION -->
 
@@ -89,6 +157,10 @@
 
     <delete id="deleteSysPermissionsByRoleId" parameterType="Integer">
         DELETE FROM sys_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteSysPermissionsByUserId" parameterType="Integer">
+        DELETE FROM sys_permission WHERE user_id = #{userId}
     </delete>
 
     <delete id="deleteSysPermissionsByIds" parameterType="List">

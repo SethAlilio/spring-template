@@ -8,9 +8,6 @@ import com.sethdev.spring_template.models.User;
 import java.util.Map;
 
 public interface UserService {
-    ResultMsg<?> updateUserDetails(User user);
-
-    ResultMsg<?> updatePassword(User user);
 
     ResultPage<User> getUsersFromGroup(PagingRequest<Map<String, Object>> request);
 
@@ -21,6 +18,14 @@ public interface UserService {
     ResultMsg<?> createUser(User user);
 
     ResultMsg<?> updateUser(User user);
+
+    ResultMsg<?> updateUserDetails(User user);
+
+    ResultMsg<?> updatePassword(Integer userId, String oldPassword, String newPassword);
+
+    ResultMsg<?> updateUserActivePosition(Integer userId, Integer relationId);
+
+    void updateUserEnabled(Integer userId, Boolean enabled);
 
     ResultMsg<?> deleteUser(Integer id);
 }

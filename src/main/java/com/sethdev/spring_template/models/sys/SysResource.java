@@ -15,11 +15,15 @@ public class SysResource extends BaseModel {
 
     private Integer type;
 
+    private String category;
+
     private String name;
 
     private Boolean enabled;
 
     private String icon;
+
+    private String resourcePath;
 
     private String path;
 

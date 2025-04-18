@@ -84,7 +84,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void deleteGroup(Integer id) {
         String path = groupRepo.getPath(id);
-        groupRepo.deleteGroup(id, path);
         groupRepo.deleteSysRelationByGroup(id, path);
+        groupRepo.deleteGroup(id, path);
     }
 }

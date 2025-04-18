@@ -1,5 +1,6 @@
 package com.sethdev.spring_template.service;
 
+import com.sethdev.spring_template.exception.BusinessException;
 import com.sethdev.spring_template.models.AppMenuItem;
 import com.sethdev.spring_template.models.ResourceNode;
 import com.sethdev.spring_template.models.ResourceNodeCheck;
@@ -11,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 public interface SysResourceService {
+    void createSysResource(SysResource sysResource) throws BusinessException;
+
     List<SysResource> getAllResources();
 
-    List<ResourceNode<Integer>> getAllResourcesAsPermissionNodeList();
+    List<ResourceNode<SysResource>> getAllResourcesAsPermissionNodeList();
 
-    List<ResourceNode<Integer>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
+    List<ResourceNode<SysResource>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
                                                                            List<SysResource> resources);
 
     List<AppMenuItem> getUserAppMenuItems(User user);
@@ -25,6 +28,10 @@ public interface SysResourceService {
     List<AppMenuItem> convertSysResourceListToAppMenuItemList(List<SysResource> currentIteration,
                                                               List<SysResource> sysResources);
 
+    void updateSysResource(SysResource sysResource) throws BusinessException;
+
+    void deleteSysResource(Integer id);
+
     void insertSysPermissionsRoleBased(List<SysPermission> permissions);
     void insertSysPermissionsUserBased(List<SysPermission> permissions);
 
@@ -33,6 +40,7 @@ public interface SysResourceService {
     List<SysPermission> getSysPermissionsByUserId(Integer userId);
 
     void deletePermissionsByRoleId(Integer roleId);
+    void deleteSysPermissionsByUserId(Integer userId);
 
     void deletePermissionsByIds(List<Integer> ids);
 

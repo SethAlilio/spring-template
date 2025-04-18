@@ -19,4 +19,8 @@ public class BaseModel {
     private LocalDateTime createDate;
 
     private Integer createBy;
+
+    public BaseModel(Integer id) {
+        this.id = id;
+    }
 }

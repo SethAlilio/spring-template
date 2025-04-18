@@ -11,25 +11,46 @@ import java.util.List;
 @Mapper
 @Repository
 public interface SysResourceRepository {
+
+    void insertSysResource(SysResource sysResource);
+
     List<SysResource> getAllResources();
 
     /**
      * @param roleId
      * @return Resources based on role's permissions
      */
-    List<SysResource> getResourcesByRole(Integer roleId);
+    List<SysResource> getResourcesByRole(@Param("category") String category,
+                                         @Param("roleId") Integer roleId);
 
     /**
      * @param userId
      * @return Resources based on user specific permissions
      */
-    List<SysResource> getResourcesByUser(Integer userId);
+    List<SysResource> getResourcesByUser(@Param("category") String category,
+                                         @Param("userId") Integer userId);
 
     /**
      * @param userId
      * @return Resources based on user's role's permissions
      */
-    List<SysResource> getResourcesByUserRole(Integer userId);
+    List<SysResource> getResourcesByUserRole(@Param("category") String category,
+                                             @Param("userId") Integer userId);
+
+    String getPath(Integer id);
+
+    String getCategory(Integer id);
+
+    void updateSysResource(SysResource sysResource);
+
+    void updatePath(@Param("id") Integer id,
+                    @Param("path") String path);
+
+    void deleteSysResource(@Param("id") Integer id,
+                           @Param("path") String path);
+
+    void deleteSysPermissionByResource(@Param("sysResourceId") Integer sysResourceId,
+                                       @Param("path") String path);
 
     /** Sys Permission **/
 
@@ -42,6 +63,7 @@ public interface SysResourceRepository {
     String getUserResourcePermission(Integer userId);
 
     void deleteSysPermissionsByRoleId(Integer roleId);
+    void deleteSysPermissionsByUserId(Integer userId);
 
     void deleteSysPermissionsByIds(@Param("ids") List<Integer> ids);
 

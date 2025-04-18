@@ -156,6 +156,10 @@
         </where>
     </select>
 
+    <select id="getPassword" parameterType="Integer" resultType="String">
+        SELECT password FROM user WHERE id = #{id}
+    </select>
+
     <update id="updateUser" parameterType="com.sethdev.spring_template.models.User">
         UPDATE user
         SET username = #{username},
@@ -181,6 +185,10 @@
 
     <update id="updateRelationId" parameterType="Map">
         UPDATE user SET relation_id = #{relationId} WHERE id = #{id}
+    </update>
+
+    <update id="updateEnabled" parameterType="Map">
+        UPDATE user SET enabled = #{enabled} WHERE id = #{id}
     </update>
 
     <delete id="deleteUser" parameterType="Integer">

@@ -5,6 +5,7 @@ import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.User;
 import com.sethdev.spring_template.service.UserService;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,11 +22,6 @@ public class UserController {
     public ResultMsg<?> updateUserDetails(@RequestBody User user) {
         return userService.updateUserDetails(user);
     }*/
-
-    @PostMapping("/changePassword")
-    public ResultMsg<?> updatePassword(@RequestBody User user) {
-        return userService.updatePassword(user);
-    }
 
     @PostMapping("/usersGroup")
     public ResultPage<User> getUsersFromGroup(@RequestBody PagingRequest<Map<String, Object>> request) {
@@ -47,9 +43,47 @@ public class UserController {
         return userService.getUser(id);
     }
 
+    /**
+     * Updates user details and positions
+     * @param user
+     * @return
+     */
     @PostMapping("/update")
     public ResultMsg<?> updateUser(@RequestBody User user) {
         return userService.updateUser(user);
+    }
+
+    /**
+     * Use to update just the basic user details (Username, Full Name, Email)
+     * Called in the profile page
+     * @param user
+     * @return
+     */
+    @PostMapping("/update/details")
+    public ResultMsg<?> updateUserDetails(@RequestBody User user) {
+        return userService.updateUserDetails(user);
+    }
+
+    @PostMapping("/update/password")
+    public ResultMsg<?> updatePassword(@RequestParam Integer userId,
+                                       @RequestParam String oldPassword,
+                                       @RequestParam String newPassword) {
+        return userService.updatePassword(userId, oldPassword, newPassword);
+    }
+
+    @PostMapping("/update/activePosition")
+    public ResultMsg<?> updateActivePosition(@RequestParam Integer userId, @RequestParam Integer relationId) {
+        return userService.updateUserActivePosition(userId, relationId);
+    }
+
+    @PostMapping("/enable")
+    public ResultMsg<?> updateUserEnabled(@RequestParam Integer id, @RequestParam Boolean enable) {
+        try {
+            userService.updateUserEnabled(id, enable);
+            return new ResultMsg<>().success("Account " + (enable ? "enabled" : "disabled"));
+        } catch (Exception e) {
+            return new ResultMsg<>().failure("Error " + (enable ? "enabling" : "disabling") + " account");
+        }
     }
 
     @PostMapping("/delete")

@@ -1,14 +1,15 @@
 package com.sethdev.spring_template.service.impl;
 
-import com.sethdev.spring_template.models.AppMenuItem;
-import com.sethdev.spring_template.models.ResourceNode;
-import com.sethdev.spring_template.models.ResourceNodeCheck;
-import com.sethdev.spring_template.models.User;
+import com.sethdev.spring_template.exception.BusinessException;
+import com.sethdev.spring_template.models.*;
+import com.sethdev.spring_template.models.constants.SysResourceCategory;
 import com.sethdev.spring_template.models.constants.UserPermissionType;
 import com.sethdev.spring_template.models.sys.SysPermission;
 import com.sethdev.spring_template.models.sys.SysResource;
 import com.sethdev.spring_template.repository.SysResourceRepository;
+import com.sethdev.spring_template.service.ContextService;
 import com.sethdev.spring_template.service.SysResourceService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +18,52 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SysResourceServiceImpl implements SysResourceService {
 
     @Autowired
     SysResourceRepository sysResourceRepo;
+
+    @Autowired
+    ContextService contextService;
+
+    @Override
+    public void createSysResource(SysResource sysResource) throws BusinessException {
+        ResultMsg<?> validation = validateSysResource(sysResource);
+        if (!validation.isSuccess()) {
+            throw new BusinessException(validation.getMessage());
+        }
+        sysResource.setCreateBy(contextService.getCurrentUserId());
+        sysResourceRepo.insertSysResource(sysResource);
+        if (sysResource.getParentId() != null) {
+            String path = sysResourceRepo.getPath(sysResource.getParentId());
+            sysResourceRepo.updatePath(sysResource.getId(),
+                    String.format("%s.%s", path, sysResource.getId()));
+        } else {
+            sysResourceRepo.updatePath(sysResource.getId(), String.valueOf(sysResource.getId()));
+        }
+    }
+
+    public ResultMsg<?> validateSysResource(SysResource sysResource) {
+        //Required fields
+        if (StringUtils.isBlank(sysResource.getName())) {
+            return new ResultMsg<>().failure("Name is required");
+        }
+        if (StringUtils.isBlank(sysResource.getCategory())) {
+            return new ResultMsg<>().failure("Category is required");
+        }
+
+        //For buttons, the parent should be a MENU
+        if (SysResourceCategory.BUTTON.name().equals(sysResource.getCategory())
+            && sysResource.getParentId() != null) {
+            String parentCategory = sysResourceRepo.getCategory(sysResource.getParentId());
+            if (SysResourceCategory.BUTTON.name().equals(parentCategory)) {
+                return new ResultMsg<>().failure("Parent of a button should be a menu");
+            }
+        }
+        return new ResultMsg<>().success();
+    }
 
     @Override
     public List<SysResource> getAllResources() {
@@ -29,7 +71,7 @@ public class SysResourceServiceImpl implements SysResourceService {
     }
 
     @Override
-    public List<ResourceNode<Integer>> getAllResourcesAsPermissionNodeList() {
+    public List<ResourceNode<SysResource>> getAllResourcesAsPermissionNodeList() {
         List<SysResource> resources = sysResourceRepo.getAllResources();
         return convertSysResourceListToListResourceNode(
                 resources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()), resources
@@ -37,15 +79,15 @@ public class SysResourceServiceImpl implements SysResourceService {
     }
 
     @Override
-    public List<ResourceNode<Integer>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
+    public List<ResourceNode<SysResource>> convertSysResourceListToListResourceNode(List<SysResource> currentIteration,
                                                                                   List<SysResource> resources) {
         if (CollectionUtils.isNotEmpty(currentIteration)) {
             return currentIteration.stream()
-                    .map(res -> ResourceNode.<Integer>builder()
+                    .map(res -> ResourceNode.<SysResource>builder()
                             .key(String.valueOf(res.getId()))
                             .label(res.getName())
                             .icon("pi pi-fw " + res.getIcon())
-                            .data(res.getId())
+                            .data(res)
                             .children(convertSysResourceListToListResourceNode(
                                     resources.stream()
                                             .filter(x -> x.getParentId() != null && x.getParentId().equals(res.getId()))
@@ -59,18 +101,38 @@ public class SysResourceServiceImpl implements SysResourceService {
     }
 
     /**
+     * Get the menu resources available to user
      * @param user
      * @return Resources as AppMenuItem to match frontend
      */
     @Override
     public List<AppMenuItem> getUserAppMenuItems(User user) {
         if (UserPermissionType.ROLE.name().equals(user.getPermission())) {
-            List<SysResource> roleResources = sysResourceRepo.getResourcesByRole(user.getRoleId());
+            List<SysResource> roleResources = sysResourceRepo.getResourcesByRole(
+                    SysResourceCategory.MENU.name(), user.getRoleId());
             return convertSysResourceListToAppMenuItemList(
                     roleResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
                     roleResources);
         } else if (UserPermissionType.USER.name().equals(user.getPermission())) {
-            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(user.getId());
+            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(
+                    SysResourceCategory.MENU.name(), user.getId());
+            return convertSysResourceListToAppMenuItemList(
+                    userResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    userResources);
+        }
+        return null;
+    }
+
+    public List<AppMenuItem> getUserAppButtonItems(User user) {
+        if (UserPermissionType.ROLE.name().equals(user.getPermission())) {
+            List<SysResource> roleResources = sysResourceRepo.getResourcesByRole(
+                    SysResourceCategory.BUTTON.name(), user.getRoleId());
+            return convertSysResourceListToAppMenuItemList(
+                    roleResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
+                    roleResources);
+        } else if (UserPermissionType.USER.name().equals(user.getPermission())) {
+            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(
+                    SysResourceCategory.BUTTON.name(), user.getId());
             return convertSysResourceListToAppMenuItemList(
                     userResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
                     userResources);
@@ -87,12 +149,14 @@ public class SysResourceServiceImpl implements SysResourceService {
     public List<AppMenuItem> getUserAppMenuItems(Integer userId) {
         String permission = sysResourceRepo.getUserResourcePermission(userId);
         if (UserPermissionType.ROLE.name().equals(permission)) {
-            List<SysResource> roleResources = sysResourceRepo.getResourcesByUserRole(userId);
+            List<SysResource> roleResources = sysResourceRepo.getResourcesByUserRole(
+                    SysResourceCategory.MENU.name(), userId);
             return convertSysResourceListToAppMenuItemList(
                     roleResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
                     roleResources);
         } else if (UserPermissionType.USER.name().equals(permission)) {
-            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(userId);
+            List<SysResource> userResources = sysResourceRepo.getResourcesByUser(
+                    SysResourceCategory.MENU.name(), userId);
             return convertSysResourceListToAppMenuItemList(
                     userResources.stream().filter(x -> x.getType().equals(1)).collect(Collectors.toList()),
                     userResources);
@@ -108,7 +172,7 @@ public class SysResourceServiceImpl implements SysResourceService {
                     .map(res -> AppMenuItem.builder()
                             .label(res.getName())
                             .icon(StringUtils.isNotBlank(res.getIcon()) ? "pi pi-fw " + res.getIcon() : "")
-                            .to(res.getPath())
+                            .to(res.getResourcePath())
                             .items(convertSysResourceListToAppMenuItemList(
                                     sysResources.stream()
                                               .filter(x -> x.getParentId() != null && x.getParentId().equals(res.getId()))
@@ -120,6 +184,22 @@ public class SysResourceServiceImpl implements SysResourceService {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void updateSysResource(SysResource sysResource) throws BusinessException {
+        ResultMsg<?> validation = validateSysResource(sysResource);
+        if (!validation.isSuccess()) {
+            throw new BusinessException(validation.getMessage());
+        }
+        sysResourceRepo.updateSysResource(sysResource);
+    }
+
+    @Override
+    public void deleteSysResource(Integer id) {
+        String path = sysResourceRepo.getPath(id);
+        sysResourceRepo.deleteSysPermissionByResource(id, path);
+        sysResourceRepo.deleteSysResource(id, path);
     }
 
     /** Sys Permission **/
@@ -147,6 +227,10 @@ public class SysResourceServiceImpl implements SysResourceService {
     @Override
     public void deletePermissionsByRoleId(Integer roleId) {
         sysResourceRepo.deleteSysPermissionsByRoleId(roleId);
+    }
+    @Override
+    public void deleteSysPermissionsByUserId(Integer userId) {
+        sysResourceRepo.deleteSysPermissionsByUserId(userId);
     }
 
     @Override

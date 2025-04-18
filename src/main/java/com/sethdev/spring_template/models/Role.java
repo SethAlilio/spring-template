@@ -1,6 +1,7 @@
 package com.sethdev.spring_template.models;
 
 import com.sethdev.spring_template.models.base.BaseModel;
+import com.sethdev.spring_template.models.sys.SysResource;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,7 @@ public class Role extends BaseModel {
     private String description;
     private Boolean enabled;
 
-    private List<ResourceNode<Integer>> permissionTree;
+    private List<ResourceNode<SysResource>> permissionTree;
 
     private Map<String, ResourceNodeCheck> selectedPermissions;
 

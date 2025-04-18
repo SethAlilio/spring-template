@@ -35,14 +35,18 @@ public interface UserRepository {
     List<User> getUsersFromGroup(PagingRequest<Map<String, Object>> params);
     int getUsersByGroupIdCount(PagingRequest<Map<String, Object>> params);
 
+    String getPassword(Integer id);
+
     void updateUser(User user);
 
     void updateDetails(User user);
 
     void updatePassword(User user);
 
-    void updateRelationId(@Param("relationId") Integer relationId,
-                          @Param("id") Integer id);
+    void updateRelationId(@Param("id") Integer id,
+                          @Param("relationId") Integer relationId);
+    void updateEnabled(@Param("id") Integer id,
+                       @Param("enabled") Boolean enabled);
 
     void deleteUser(Integer id);
 }
