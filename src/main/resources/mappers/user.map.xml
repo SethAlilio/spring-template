@@ -50,6 +50,9 @@
                 <bind name="likeGroup" value="'%' + query.group + '%'"/>
                 AND LOWER(g.name) LIKE LOWER(#{likeGroup})
             </if>
+            <if test="query != null and query.enabled != null">
+                AND u.enabled = #{query.enabled}
+            </if>
         </where>
     </sql>
 
