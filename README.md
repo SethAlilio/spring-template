@@ -1,9 +1,6 @@
 # Contents
 - [Setup](#setup)
-
-
-
-
+- [Database Structure](#database-structure)
 
 # Setup
 1. Update `application.properties`
