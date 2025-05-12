@@ -58,6 +58,7 @@ public class UserServiceImpl implements UserService {
         List<User> userList = userRepo.getUsersFromGroup(request);
         int totalCount = request.getStart() == 0 && userList.size() < request.getLimit()
                 ? userList.size() : userRepo.getUsersByGroupIdCount(request);
+        //((2-1) * 10) + 8
         return ResultPage.<User>builder()
                 .data(userList)
                 .pageStart(request.getStart())
@@ -162,6 +163,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResultPage<User> getUserList(PagingRequest<User> request) {
+        List<User> userList = userRepo.getUserList(request);
+        int totalCount = request.getStart() == 0 && userList.size() < request.getLimit()
+                ? userList.size() : userRepo.getUserListCount(request);
+        return ResultPage.<User>builder()
+                .data(userList)
+                .pageStart(request.getStart())
+                .pageSize(request.getLimit())
+                .totalCount(totalCount)
+                .build();
+    }
+
+    public ResultPage<User> getUserListByGroup(PagingRequest<User> request) {
         List<User> userList = userRepo.getUserList(request);
         int totalCount = request.getStart() == 0 && userList.size() < request.getLimit()
                 ? userList.size() : userRepo.getUserListCount(request);
@@ -375,6 +388,37 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             return new ResultMsg<>().failure("Error deleting user");
         }
+    }
+
+    @Override
+    public ResultMsg<?> addUserToGroup(SysRelation relation) {
+        if (relation.getUserId() == null) {
+            return new ResultMsg<>().failure("No user selected");
+        }
+        if (relation.getRoleId() == null) {
+            return new ResultMsg<>().failure("No role selected");
+        }
+        if (relation.getGroupId() == null) {
+            return new ResultMsg<>().failure("No group selected");
+        }
+
+        Integer sysRelId = sysRelRepo.getSysRelationIdByUserRoleGroup(
+                relation.getUserId(), relation.getRoleId(), relation.getGroupId()
+        );
+
+        if (sysRelId != null) {
+            return new ResultMsg<>().failure("User already exists in the group with the same role");
+        }
+
+        relation.setCreateBy(contextService.getCurrentUserId());
+        sysRelRepo.insertSysRelation(relation);
+        return new ResultMsg<>().success("User added");
+    }
+
+    @Override
+    public ResultMsg<?> removeUserRelation(Integer relationId) {
+        sysRelRepo.deleteSysRelationById(relationId);
+        return new ResultMsg<>().success("User removed");
     }
 
 }

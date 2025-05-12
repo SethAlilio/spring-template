@@ -1,5 +1,6 @@
 package com.sethdev.spring_template.repository;
 
+import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.sys.dialog.CustomDialog;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
@@ -23,6 +24,9 @@ public interface CustomDialogRepository {
 
     List<CustomDialog> getCustomDialogList(Map<String, Object> param);
     int getCustomDialogListCount(Map<String, Object> param);
+
+    List<CustomDialog> getCustomDialogList(PagingRequest<CustomDialog> request);
+    int getCustomDialogListCount(PagingRequest<CustomDialog> request);
 
     String getDialogColumns(Integer id);
     CustomDialog getDialogForSearchFieldOnChange(Integer id);

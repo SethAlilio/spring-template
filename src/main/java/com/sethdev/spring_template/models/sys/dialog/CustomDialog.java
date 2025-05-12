@@ -512,7 +512,7 @@ public class CustomDialog {
     }
 
     public enum LayoutType {
-        SINGLE, MULTI
+        SINGLE, MULTI, MINIMAL
     }
 
     @Getter

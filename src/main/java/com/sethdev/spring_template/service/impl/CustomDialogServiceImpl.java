@@ -1,6 +1,7 @@
 package com.sethdev.spring_template.service.impl;
 
 import com.google.gson.Gson;
+import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.sys.dialog.CustomDialog;
@@ -207,7 +208,8 @@ public class CustomDialogServiceImpl implements CustomDialogService {
                 dialog.getColumnList().forEach(x -> {
                     if (x.getSearchSettings() == null) {
                         x.setSearchSettings(new CustomDialog.SearchSettings("TEXT"));
-                    } else {
+                    }
+                    else {
                         SearchFieldType fieldType = SearchFieldType
                                 .get(x.getSearchSettings().getType());
                         SearchFieldDataSource dataSrc = SearchFieldDataSource
@@ -406,20 +408,175 @@ public class CustomDialogServiceImpl implements CustomDialogService {
         }
     }
 
-    /** Merge the search filter to the select query
-     * (For FilterType.NONE and FilterType.FIELD_FILTER) */
+    @Override
+    public ResultPage<Map<String, Object>> getDialogDataListV3(PagingRequest<CustomDialog> request) {
+        try {
+            CustomDialog dialog = this.getByKey(request.getQuery().getKey(), false);
+            log.info("getDialogDataListV3 | dialog: " + new Gson().toJson(dialog));
+
+            List<CustomDialog.Column> searchColumns = dialog.getColumnList().stream()
+                    .filter(x -> x.getSearchable() != null && x.getSearchable())
+                    .collect(Collectors.toList());
+            log.info("getDialogDataListV3 | searchColumns: " + new Gson().toJson(searchColumns));
+            log.info("getDialogDataListV3 | searchParams: " + new Gson().toJson(request.getQuery().getSearchParams()));
+
+            String searchData = MapUtils.getString(request.getQuery().getSearchParams(), "search");
+            log.info("getDialogDataListV3 | searchData: " + searchData);
+            Map<String, Object> searchMap = com.sethdev.spring_template.util.MapUtils.objectToMap(
+                    request.getQuery().getSearchParams().get("searchData"));
+            log.info("getDialogDataListV3 | searchMap: " + new Gson().toJson(searchMap));
+            FilterType filterType = dialog.getFilterType();
+            log.info("getDialogDataListV3 | filterType: " + filterType);
+
+            if (FilterType.NONE.equals(filterType)) {
+                log.info("getDialogDataListV3 | [NONE]");
+                List<String> selectColumns = dialog.getColumnsForSql();
+                StringBuilder whereSql = new StringBuilder();
+
+                //Merge the search condition
+                this.mergeSearchQuery(dialog, whereSql, searchColumns, searchData, searchMap);
+
+                String where = whereSql.toString();
+
+                //Form the final query for list and count
+                String sql = "SELECT " + String.join(", ", selectColumns)
+                        + " FROM " + dialog.getQueryTable()
+                        + (StringUtils.isNotBlank(where) ? " WHERE" + where : "")
+                        + " LIMIT " + request.getStart() + ", " + request.getLimit();
+
+                log.info("getDialogDataListV3 | [NONE] sql: " + sql);
+
+                String sqlCount = "SELECT COUNT(0) FROM " + dialog.getQueryTable()
+                        + (StringUtils.isNotBlank(where) ? " WHERE " + where : "");
+                log.info("getDialogDataListV3 | [NONE] sqlCount: " + sqlCount);
+
+                //Execute the select queries
+                List<Map<String, Object>> dataList = queryExecutor.select(sql);
+                List<CustomDialog.Column> scriptCols = dialog.getColumnList().stream()
+                        .filter(x -> CustomDialog.ColumnType.SCRIPT.name().equals(x.getType()))
+                        .collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(scriptCols)) {
+                    dataList = this.applyScriptColumnToQueryResult(scriptCols, dataList);
+                }
+                Integer count = queryExecutor.selectOne(sqlCount, Integer.class);
+
+                return ResultPage.<Map<String, Object>>builder()
+                        .data(applyDisableScriptToQueryResult(dialog, dataList))
+                        .totalCount(count)
+                        .pageSize(request.getLimit())
+                        .pageStart(request.getStart())
+                        .build();
+            }
+            else if (FilterType.CUSTOM_QUERY.equals(filterType)) {
+                log.info("getDialogDataListV3 | [CUSTOM_QUERY]");
+                //Apply filter params & merge the where clause for search fields
+                Map<String, Object> dataParam = com.sethdev.spring_template.util.MapUtils.objectToMap(
+                        request.getQuery().getSearchParams().get("param"));
+                dialog.setFilterParams(dataParam);
+                Pair<String, String> sqlPair = this.mergeSearchQuery(dialog, searchColumns, searchData, searchMap);
+                String sql = sqlPair.getLeft();
+                String sqlCount = sqlPair.getRight();
+
+                //Execute queries
+                List<Map<String, Object>> dataList = queryExecutor.select(sql);
+                Integer count = queryExecutor.selectOne(sqlCount, Integer.class);
+
+                return ResultPage.<Map<String, Object>>builder()
+                        .data(applyDisableScriptToQueryResult(dialog, dataList))
+                        .totalCount(count)
+                        .pageSize(request.getLimit())
+                        .pageStart(request.getStart())
+                        .build();
+            }
+            else if (FilterType.FIELD_FILTER.equals(filterType)) {
+                log.info("getDialogDataListV3 | [FIELD_FILTER]");
+                List<String> selectColumns = dialog.getColumnsForSql();
+
+                //Merge the field filter condition
+                StringBuilder whereSql = new StringBuilder();
+                whereSql.append("(");
+                List<FilterClause> filterClauses = dialog.getDialogFilter().getFilterClauses();
+                AtomicInteger index = new AtomicInteger(0);
+                filterClauses.forEach(x -> {
+                    int i = index.getAndIncrement();
+                    String sql = x.format(i != 0);
+                    whereSql.append(sql).append(i + 1 < filterClauses.size() ? " " : "");
+                });
+                whereSql.append(")");
+
+                //Merge the search condition
+                this.mergeSearchQuery(dialog, whereSql, searchColumns, searchData, searchMap);
+
+                //Form the final query for list and count
+                String sql = "SELECT " + String.join(", ", selectColumns) + " FROM " + dialog.getQueryTable()
+                        + " WHERE " + whereSql + " LIMIT " + request.getStart() + ", " + request.getLimit();
+
+                String sqlCount = "SELECT COUNT(0) FROM " + dialog.getQueryTable() + " WHERE " + whereSql;
+
+                //Apply custom params if available (Custom params are enclosed with curly brackets {})
+                Map<String, Object> dataParam = com.sethdev.spring_template.util.MapUtils.objectToMap(
+                        request.getQuery().getSearchParams().get("param"));
+                dialog.setFilterParams(dataParam);
+                Pair<String, String> sqlPair = dialog.applyParamToSql(sql, sqlCount);
+                sql = sqlPair.getLeft();
+                sqlCount = sqlPair.getRight();
+
+                //Execute the select queries
+                List<Map<String, Object>> dataList = queryExecutor.select(sql);
+                List<CustomDialog.Column> scriptCols = dialog.getColumnList().stream()
+                        .filter(x -> CustomDialog.ColumnType.SCRIPT.name().equals(x.getType()))
+                        .collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(scriptCols)) {
+                    dataList = this.applyScriptColumnToQueryResult(scriptCols, dataList);
+                }
+                Integer count = queryExecutor.selectOne(sqlCount, Integer.class);
+
+
+                return ResultPage.<Map<String, Object>>builder()
+                        .data(applyDisableScriptToQueryResult(dialog, dataList))
+                        .totalCount(count)
+                        .pageSize(request.getLimit())
+                        .pageStart(request.getStart())
+                        .build();
+            }
+            return ResultPage.<Map<String, Object>>builder()
+                    .data(null)
+                    .totalCount(0)
+                    .pageSize(request.getLimit())
+                    .pageStart(request.getStart())
+                    .build();
+        } catch (Exception e) {
+            log.info("[CustomDialog] e: " + ExceptionUtils.getStackTrace(e));
+            return new ResultPage<>();
+        }
+    }
+
+    /**
+     *  Merge the search filter to the select query
+     *  (For FilterType.NONE and FilterType.FIELD_FILTER)
+     * @param dialog
+     * @param whereSql
+     * @param searchColumns
+     * @param searchData - For dialogs with {@link LayoutType#SINGLE} layoutSettings.type
+     *                   (No need to put value for MULTI layout type dialogs
+     * @param searchMap - For dialogs with {@link LayoutType#MULTI} layoutSettings.type
+     *                   (No need to put value for SINGLE layout type dialogs
+     */
     public void mergeSearchQuery(CustomDialog dialog, StringBuilder whereSql, List<CustomDialog.Column> searchColumns,
                                  String searchData, Map<String, Object> searchMap) {
+        log.info("mergeSearchQuery | searchColumns: " + new Gson().toJson(searchColumns));
         boolean hasFilter = !whereSql.toString().isBlank();
         //Single field layout
         if (CustomDialog.LayoutType.SINGLE.name().equals(dialog.getLayoutSettings().getType())
                 && StringUtils.isNotBlank(searchData) && CollectionUtils.isNotEmpty(searchColumns)) {
+            log.info("mergeSearchQuery | [SINGLE]");
             List<String> conditions = new ArrayList<>();
             for (CustomDialog.Column col : searchColumns) {
                 String columnName =
                         CustomDialog.ColumnType.DATABASE.name().equals(col.getType()) ? col.getColumnName()
                                 : CustomDialog.ColumnType.FORMULA.name().equals(col.getType())
                                 ? col.getCustomValue() : "";
+                log.info("mergeSearchQuery | [SINGLE] columnName: " + columnName);
                 if (StringUtils.isNotBlank(columnName)) {
                     conditions.add(String.format("LOWER(%s) LIKE '%%%s%%'",
                             columnName, searchData.toLowerCase()));
@@ -428,6 +585,7 @@ public class CustomDialogServiceImpl implements CustomDialogService {
             if (hasFilter) whereSql.append(" AND (");
             whereSql.append(" ").append(StringUtils.join(conditions, " OR "));
             if (hasFilter) whereSql.append(")");
+            log.info("mergeSearchQuery | [SINGLE] whereSql: " + whereSql.toString());
         }
         //Multi field layout
         else if (CustomDialog.LayoutType.MULTI.name().equals(dialog.getLayoutSettings().getType())
@@ -710,7 +868,7 @@ public class CustomDialogServiceImpl implements CustomDialogService {
 
             if (FilterType.NONE.equals(filterType)) {
                 String sql = "SELECT " + String.join(", ", selectColumns)
-                        + " FROM " + dialog.getQueryTable();
+                        + " FROM `" + dialog.getQueryTable() + "`";
                 dataList = queryExecutor.select(sql);
             } else if (FilterType.CUSTOM_QUERY.equals(filterType)) {
                 String sql = dialog.getDialogFilter().getSqlQuery();
@@ -728,7 +886,7 @@ public class CustomDialogServiceImpl implements CustomDialogService {
                     whereSql.append(sql).append(i + 1 < filterClauses.size() ? " " : "");
                 });
                 String sql = "SELECT " + String.join(", ", selectColumns)
-                        + " FROM " + dialog.getQueryTable() + " WHERE " + whereSql;
+                        + " FROM `" + dialog.getQueryTable() + "` WHERE " + whereSql;
                 dialog.setFilterParams(com.sethdev.spring_template.util.MapUtils.objectToMap(params.get("param")));
                 sql = dialog.applyParamToSql(sql);
                 dataList = queryExecutor.select(sql);
@@ -815,6 +973,19 @@ public class CustomDialogServiceImpl implements CustomDialogService {
     }
 
     @Override
+    public ResultPage<CustomDialog> getCustomDialogList(PagingRequest<CustomDialog> request) {
+        List<CustomDialog> dialogs = customDialogRepo.getCustomDialogList(request);
+        int totalCount = request.getStart() == 1 && dialogs.size() < request.getLimit()
+                ? dialogs.size() : customDialogRepo.getCustomDialogListCount(request);
+        return ResultPage.<CustomDialog>builder()
+                .data(dialogs)
+                .pageStart(request.getStart())
+                .pageSize(request.getLimit())
+                .totalCount(totalCount)
+                .build();
+    }
+
+    @Override
     public int getCustomDialogListCount(Map<String, Object> param) {
         return customDialogRepo.getCustomDialogListCount(param);
     }
@@ -834,7 +1005,7 @@ public class CustomDialogServiceImpl implements CustomDialogService {
 
     @Override
     public List<Map<String, String>> getTableColumns(String table) {
-        return customDialogRepo.getTableColumns(table);
+        return customDialogRepo.getTableColumns(String.format("`%s`", table));
     }
 
     @Override

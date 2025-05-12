@@ -1,5 +1,6 @@
 package com.sethdev.spring_template.controller;
 
+import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.sys.dialog.CustomDialog;
@@ -25,17 +26,13 @@ public class CustomDialogController {
 
     @PostMapping("/save")
     public ResultMsg<CustomDialog> save(@RequestBody CustomDialog dialog) {
-        ResultMsg<CustomDialog> result = new ResultMsg<>();
         try {
             String action = dialog.getId() == null ? "created" : "updated";
             CustomDialog savedDialog = customDialogService.save(dialog);
-            result.setData(savedDialog);
-            result.setMessage("Dialog " + action);
+            return new ResultMsg<CustomDialog>().success(savedDialog, "Dialog " + action);
         } catch (Exception e) {
-            result.setSuccess(false);
-            result.setMessage(e.getMessage());
+            return new ResultMsg<CustomDialog>().failure(e.getMessage());
         }
-        return result;
     }
 
     @PostMapping("/create")
@@ -85,6 +82,11 @@ public class CustomDialogController {
         return customDialogService.getDialogDataListV2(params);
         //return customDialogService.getDialogDataList(params);
     }
+    @PostMapping("/queryDataListV2")
+    public ResultPage<Map<String, Object>> getDialogDataListV3(@RequestBody PagingRequest<CustomDialog> request) {
+        return customDialogService.getDialogDataListV3(request);
+        //return customDialogService.getDialogDataList(params);
+    }
 
     @PostMapping("/queryDataTree")
     public ResultMsg<TreeData> getDialogDataTree(@RequestBody Map<String, Object> params) {
@@ -103,7 +105,8 @@ public class CustomDialogController {
         return new ResultMsg<>(true, "", queryMap);
     }
 
-    @PostMapping("/query")
+    //OLD
+    /*@PostMapping("/list")
     public ResultPage<CustomDialog> getCustomDialogList(@RequestBody Map<String, Object> params) {
         try {
             return ResultPage.<CustomDialog>builder()
@@ -116,6 +119,11 @@ public class CustomDialogController {
             log.info("getCustomDialogList.e: " + ExceptionUtils.getStackTrace(e));
             return new ResultPage<>();
         }
+    }*/
+
+    @PostMapping("/list")
+    public ResultPage<CustomDialog> getCustomDialogList(@RequestBody PagingRequest<CustomDialog> request) {
+        return customDialogService.getCustomDialogList(request);
     }
 
     @PostMapping("/handleSearchFieldOnChange")

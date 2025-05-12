@@ -17,8 +17,11 @@ public class SysRelation extends BaseModel {
     private Boolean enabled;
 
     private String userName;
+    private String userUserName;
     private String roleName;
     private String groupName;
+
+    private Integer relationId;
 
     private Boolean isActive;
 }

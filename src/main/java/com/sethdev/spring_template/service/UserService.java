@@ -4,6 +4,7 @@ import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.User;
+import com.sethdev.spring_template.models.sys.SysRelation;
 
 import java.util.Map;
 
@@ -28,4 +29,8 @@ public interface UserService {
     void updateUserEnabled(Integer userId, Boolean enabled);
 
     ResultMsg<?> deleteUser(Integer id);
+
+    ResultMsg<?> addUserToGroup(SysRelation relation);
+
+    ResultMsg<?> removeUserRelation(Integer relationId);
 }

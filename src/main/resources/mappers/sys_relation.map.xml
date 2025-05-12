@@ -8,16 +8,58 @@
     <resultMap id="SysRelation" type="com.sethdev.spring_template.models.sys.SysRelation">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
-        <result column="user_name" property="userName"/>
+        <result column="full_name" property="userName"/>
+        <result column="username" property="userUserName"/>
         <result column="role_id" property="roleId"/>
         <result column="role_name" property="roleName"/>
         <result column="group_id" property="groupId"/>
         <result column="group_name" property="groupName"/>
         <result column="enabled" property="enabled"/>
+        <result column="relation_id" property="relationId"/>
         <result column="create_date" property="createDate"
                 typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
         <result column="create_by" property="createBy"/>
     </resultMap>
+
+    <sql id="whereSysRelationList">
+        <where>
+            <if test="query != null and query.userId != null">
+                AND sr.user_id = #{query.userId}
+            </if>
+            <if test="query != null and query.roleId != null">
+                AND sr.role_id = #{query.roleId}
+            </if>
+            <if test="query != null and query.groupId != null">
+                AND sr.group_id = #{query.groupId}
+            </if>
+
+            <if test="query != null and query.userName != null and query.userName != ''">
+                <bind name="likeUserName" value="'%' + query.userName + '%'"/>
+                AND LOWER(u.full_name) LIKE LOWER(#{likeUserName})
+            </if>
+            <if test="query != null and query.userUserName != null and query.userUserName != ''">
+                <bind name="likeUserUsername" value="'%' + query.userUserName + '%'"/>
+                AND LOWER(u.username) LIKE LOWER(#{likeUserUsername})
+            </if>
+            <if test="query != null and query.roleName != null and query.roleName != ''">
+                <bind name="likeRoleName" value="'%' + query.roleName + '%'"/>
+                AND LOWER(r.name) LIKE LOWER(#{likeRoleName})
+            </if>
+            <if test="query != null and query.groupName != null and query.groupName != ''">
+                <bind name="likeGroupName" value="'%' + query.groupName + '%'"/>
+                AND LOWER(g.name) LIKE LOWER(#{likeGroupName})
+            </if>
+
+            <if test="query != null and query.enabled != null">
+                AND sr.enabled = #{query.enabled}
+            </if>
+        </where>
+    </sql>
+
+    <insert id="insertSysRelation" parameterType="com.sethdev.spring_template.models.sys.SysRelation">
+        INSERT INTO sys_relation (user_id, role_id, group_id, create_by)
+        VALUES (#{userId}, #{roleId}, #{groupId}, #{createBy})
+    </insert>
 
     <insert id="insertSysRelations" parameterType="java.util.List">
         INSERT INTO sys_relation (user_id, role_id, group_id, create_by)
@@ -46,6 +88,30 @@
             AND role_id = ${roleId}
             AND group_id = ${groupId}
     </select>
+
+    <select id="getSysRelationList" parameterType="com.sethdev.spring_template.models.PagingRequest" resultMap="SysRelation">
+        SELECT sr.*, u.full_name, u.username, sr.id relation_id, r.name role_name, g.name group_name
+        FROM sys_relation sr
+        INNER JOIN `user` u ON u.id = sr.user_id
+        INNER JOIN `role` r ON r.id = sr.role_id
+        INNER JOIN `group` g ON g.id = sr.group_id
+        <include refid="whereSysRelationList"/>
+        ORDER BY sr.id DESC
+        LIMIT #{start}, #{limit}
+    </select>
+
+    <select id="getSysRelationListCount" parameterType="com.sethdev.spring_template.models.PagingRequest" resultType="Integer">
+        SELECT COUNT(0)
+        FROM sys_relation sr
+        INNER JOIN `user` u ON u.id = sr.user_id
+        INNER JOIN `role` r ON r.id = sr.role_id
+        INNER JOIN `group` g ON g.id = sr.group_id
+        <include refid="whereSysRelationList"/>
+    </select>
+
+    <delete id="deleteSysRelationById" parameterType="Integer">
+        DELETE FROM sys_relation WHERE id = #{id}
+    </delete>
 
     <delete id="deleteSysRelationByIds" parameterType="List">
         DELETE FROM sys_relation WHERE id IN

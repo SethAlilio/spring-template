@@ -1,5 +1,6 @@
 package com.sethdev.spring_template.service;
 
+import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.sys.dialog.CustomDialog;
@@ -24,6 +25,8 @@ public interface CustomDialogService {
 
     ResultPage<Map<String, Object>> getDialogDataListV2(Map<String, Object> params);
 
+    ResultPage<Map<String, Object>> getDialogDataListV3(PagingRequest<CustomDialog> request);
+
     List<Map<String, Object>> handleSearchFieldOnChange(Integer id, String columnName,
                                                         Map<String, Object> filterParams,
                                                         Map<String, Object> searchParams);
@@ -31,6 +34,9 @@ public interface CustomDialogService {
     ResultMsg<TreeData> getDialogDataTreeV2(Map<String, Object> params);
 
     List<CustomDialog> getCustomDialogList(Map<String, Object> param);
+
+    ResultPage<CustomDialog> getCustomDialogList(PagingRequest<CustomDialog> request);
+
     int getCustomDialogListCount(Map<String, Object> param);
 
     List<Map<String, String>> getTableOptions();

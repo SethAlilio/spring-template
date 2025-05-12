@@ -4,6 +4,7 @@ import com.sethdev.spring_template.models.PagingRequest;
 import com.sethdev.spring_template.models.ResultMsg;
 import com.sethdev.spring_template.models.ResultPage;
 import com.sethdev.spring_template.models.User;
+import com.sethdev.spring_template.models.sys.SysRelation;
 import com.sethdev.spring_template.service.UserService;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,5 +90,14 @@ public class UserController {
     @PostMapping("/delete")
     public ResultMsg<?> deleteUser(@RequestParam Integer id) {
         return userService.deleteUser(id);
+    }
+
+    @PostMapping("/addToGroup")
+    public ResultMsg<?> addUserToGroup(@RequestBody SysRelation relation) {
+        return userService.addUserToGroup(relation);
+    }
+    @PostMapping("/removeRelation")
+    public ResultMsg<?> removeUserRelation(@RequestParam Integer relationId) {
+        return userService.removeUserRelation(relationId);
     }
 }

@@ -16,9 +16,16 @@
 
     <sql id="whereCustomDialog">
         <where>
-            <if test="search != null and search != ''">
-                <bind name="src" value="'%' + search +'%'"/>
-                LOWER(name_) LIKE LOWER(#{src}) OR LOWER(key_) LIKE LOWER(#{src})
+            <if test="query != null and query.name != null and query.name != ''">
+                <bind name="likeName" value="'%' + query.name +'%'"/>
+                LOWER(name_) LIKE LOWER(#{likeName})
+            </if>
+            <if test="query != null and query.key != null and query.key != ''">
+                <bind name="likeKey" value="'%' + query.key +'%'"/>
+                AND LOWER(key_) LIKE LOWER(#{likeKey})
+            </if>
+            <if test="query != null and query.type != null and query.type != ''">
+                AND type_ = #{query.type}
             </if>
         </where>
     </sql>
